@@ -26,7 +26,11 @@ ADDR_DSPL:
 # The address of the keyboard. Don't forget to connect it!
 ADDR_KBRD:
     .word 0xffff0000
-
+capsule_x:          .word 16            # Initial X position (centered)
+capsule_y:          .word 53             # Initial Y position (top of bottle)
+capsule_orientation:.word 1             # Capsule orientation (1 = longitudinal, 0 = latitudinal)
+capsule_top_color:  .word 0xff0000       # Red
+capsule_bottom_color:.word 0xffff00      # Yellow
 ##############################################################################
 # Mutable Data
 ##############################################################################
@@ -193,16 +197,47 @@ main:
     addi $t0, $t0, 3104
     sw $t2, 0($t0)
     
-    Exit:
-    li, $v0, 10
-    syscall
+        j game_loop
     
 game_loop:
 
+    jal erase_capsule
     jal check_input            # Handle key presses
-    jal render_scene           # Clear screen and redraw capsule
+    jal draw_capsule
     jal frame_delay            # Delay for 60 FPS
     j game_loop                # Repeat
+    
+    erase_capsule:
+    lw $t0, capsule_x          # Load current X position
+    lw $t1, capsule_y          # Load current Y position
+    lw $t2, capsule_orientation # Load orientation
+
+    # Calculate base address for capsule
+    mul $t3, $t1, 128          # Row offset (row * bytes_per_row)
+    add $t3, $t3, $t0          # Column offset
+    sll $t3, $t3, 2            # Multiply by 4 (bytes_per_pixel)
+    lw $t4, ADDR_DSPL          # Base display address
+    add $t3, $t3, $t4          # Full address
+
+    li $t5, 0x000000           # Black color (to erase capsule)
+
+    # Erase top half
+    sw $t5, 0($t3)
+
+    # Check orientation
+    bnez $t2, erase_vertical_capsule
+
+    # Horizontal: Erase right half
+    addi $t3, $t3, 4           # Move to the right
+    sw $t5, 0($t3)
+    jr $ra
+
+erase_vertical_capsule:
+    # Vertical: Erase bottom half
+    addi $t3, $t3, 128         # Move down
+    sw $t5, 0($t3)
+    jr $ra
+
     # 1a. Check if key has been pressed
     check_input:
     lw $t1, ADDR_KBRD       # Load keyboard input (address of keyboard)
@@ -233,40 +268,216 @@ game_loop:
     no_key:
     jr $ra                  # Return if no key matched
     
-    move_left:
-    lw $t0, capsule_x          # Load current X position
-    li $t1, 0                  # Left boundary
-    bgt $t0, $t1, move_ok      # If not at boundary, move
-    jr $ra                     # Otherwise, return
-    
-    move_ok:
-    subi $t0, $t0, 4           # Decrease X position
-    sw $t0, capsule_x          # Update position
+rotate_capsule:
+    lw $t0, capsule_x              # Load current X position
+    lw $t1, capsule_y              # Load current Y position
+    lw $t2, capsule_orientation    # Load current orientation
+
+    # If longitudinal, check horizontal validity
+    beqz $t2, rotate_to_horizontal
+
+    # Check if longitudinal position is valid
+    # Left pixel of horizontal capsule (x - 1, y)
+    subi $a0, $t0, 1               # X - 1
+    move $a1, $t1                  # Y
+    jal check_pixel
+    li $t3, 0x000000               # Black color
+    bne $v0, $t3, no_rotate        # If not black, skip rotation
+
+    # Right pixel of horizontal capsule (x + 1, y)
+    addi $a0, $t0, 1               # X + 1
+    move $a1, $t1                  # Y
+    jal check_pixel
+    bne $v0, $t3, no_rotate        # If not black, skip rotation
+
+    # Rotate to horizontal
+    li $t2, 0                      # Update to horizontal
+    sw $t2, capsule_orientation
     jr $ra
-    
-    # Move Left Subroutine
+
+rotate_to_horizontal:
+    # If horizontal, check longitudinal validity
+    # Bottom pixel of vertical capsule (x, y + 1)
+    move $a0, $t0                  # X
+    addi $a1, $t1, 1               # Y + 1
+    jal check_pixel
+    li $t3, 0x000000               # Black color
+    bne $v0, $t3, no_rotate        # If not black, skip rotation
+
+    # Rotate to longitudinal
+    li $t2, 1                      # Update to longitudinal
+    sw $t2, capsule_orientation
+    jr $ra
+
+no_rotate:
+    jr $ra
+
 move_left:
     lw $t0, capsule_x          # Load current X position
     lw $t1, capsule_y          # Load current Y position
+    lw $t2, capsule_orientation # Load current orientation
 
-    # Check pixel to the left of the top half
-    subi $a0, $t0, 4           # X - 4 (left pixel)
+    beqz $t2, horizontal_left  # If horizontal, check left pixel of left part
+
+    # Longitudinal: Check left of top half
+    subi $a0, $t0, 1           # X - 1 (left pixel)
     move $a1, $t1              # Y (same row as top half)
     jal check_pixel
-    li $t2, 0x000000           # Black color
-    bne $v0, $t2, no_move      # If not black, skip move
+    li $t3, 0x000000           # Black color
+    bne $v0, $t3, no_move      # If not black, skip move
 
-    # Check pixel to the left of the bottom half
-    addi $a1, $t1, 4           # Y + 1 (row below for bottom half)
+    # Longitudinal: Check left of bottom half
+    addi $a1, $t1, 1           # Y + 1 (row below for bottom half)
     jal check_pixel
-    bne $v0, $t2, no_move      # If not black, skip move
+    bne $v0, $t3, no_move      # If not black, skip move
 
     # Move left
     subi $t0, $t0, 1           # Decrease X position
     sw $t0, capsule_x          # Update position
+    jr $ra
+
+horizontal_left:
+    # Latitudinal: Check left of left part
+    subi $a0, $t0, 1           # X - 1 (left pixel)
+    move $a1, $t1              # Y (same row)
+    jal check_pixel
+    bne $v0, $t3, no_move      # If not black, skip move
+
+    # Move left
+    subi $t0, $t0, 1           # Decrease X position
+    sw $t0, capsule_x          # Update position
+    jr $ra
+
+no_movge:
+    jr $ra
+    
+move_right:
+    lw $t0, capsule_x          # Load current X position
+    lw $t1, capsule_y          # Load current Y position
+    lw $t2, capsule_orientation # Load current orientation
+
+    beqz $t2, horizontal_right  # If horizontal, check right pixel of right part
+
+    # Longitudinal: Check right of top half
+    addi $a0, $t0, 1           # X + 1 (right pixel)
+    move $a1, $t1              # Y (same row as top half)
+    jal check_pixel
+    li $t3, 0x000000           # Black color
+    bne $v0, $t3, no_move      # If not black, skip move
+
+    # Longitudinal: Check right of bottom half
+    addi $a1, $t1, 1           # Y + 1 (row below for bottom half)
+    jal check_pixel
+    bne $v0, $t3, no_move      # If not black, skip move
+
+    # Move right
+    addi $t0, $t0, 1           # Increase X position
+    sw $t0, capsule_x          # Update position
+    jr $ra
+
+horizontal_right:
+    # Latitudinal: Check right of right part
+    addi $a0, $t0, 1           # X + 1 (right pixel)
+    move $a1, $t1              # Y (same row)
+    jal check_pixel
+    bne $v0, $t3, no_move      # If not black, skip move
+
+    # Move right
+    addi $t0, $t0, 1           # Increase X position
+    sw $t0, capsule_x          # Update position
+    jr $ra
 
 no_move:
     jr $ra
+    
+move_down:
+    lw $t0, capsule_x          # Load current X position
+    lw $t1, capsule_y          # Load current Y position
+    lw $t2, capsule_orientation # Load current orientation
+
+    beqz $t2, horizontal_down  # If horizontal, check below both parts
+
+    # Longitudinal: Check below the bottom half
+    move $a0, $t0              # X (same column)
+    addi $a1, $t1, 2           # Y + 2 (row below bottom half)
+    jal check_pixel
+    li $t3, 0x000000           # Black color
+    bne $v0, $t3, no_move      # If not black, skip move
+
+    # Move down
+    addi $t1, $t1, 1           # Increase Y position
+    sw $t1, capsule_y          # Update position
+    jr $ra
+
+horizontal_down:
+    # Latitudinal: Check below left part
+    move $a0, $t0              # X (left part)
+    addi $a1, $t1, 1           # Y + 1
+    jal check_pixel
+    bne $v0, $t3, no_move      # If not black, skip move
+
+    # Latitudinal: Check below right part
+    addi $a0, $t0, 1           # X + 1 (right part)
+    addi $a1, $t1, 1           # Y + 1
+    jal check_pixel
+    bne $v0, $t3, no_move      # If not black, skip move
+
+    # Move down
+    addi $t1, $t1, 1           # Increase Y position
+    sw $t1, capsule_y          # Update position
+
+    
+# Check Pixel Subroutine
+check_pixel:
+    mul $t0, $a1, 128       # Y * row increment (128 bytes per row)
+    add $t0, $t0, $a0       # Add X position
+    sll $t0, $t0, 2         # Multiply by 4 (word size)
+    lw $t1, ADDR_DSPL       # Load base display base address
+    add $t0, $t0, $t1       # Add base address to get pixel address
+
+    lw $v0, 0($t0)          # Load the pixel color
+    jr $ra
+
+# Draw Capsule Subroutine
+draw_capsule:
+    lw $t0, capsule_x          # X position
+    lw $t1, capsule_y          # Y position
+    lw $t2, capsule_orientation # Orientation
+
+    mul $t3, $t1, 128          # Calculate base address
+    add $t3, $t3, $t0
+    sll $t3, $t3, 2
+    lw $t4, ADDR_DSPL          # Base address
+
+    add $t3, $t3, $t4          # Full address
+
+    lw $t5, capsule_top_color
+    lw $t6, capsule_bottom_color
+
+    sw $t5, 0($t3)             # Top half
+    bnez $t2, vertical_capsule # If vertical, handle vertical case
+
+    # Horizontal: Draw right half
+    addi $t3, $t3, 4           # Move right
+    sw $t6, 0($t3)
+    jr $ra
+
+vertical_capsule:
+    addi $t3, $t3, 128         # Move down
+    sw $t6, 0($t3)
+    jr $ra
+
+# Frame Delay Subroutine
+frame_delay:
+    li $t0, 1000000          # Adjust this value for your system
+frame_delay_loop:
+    subi $t0, $t0, 1
+    bnez $t0, frame_delay_loop
+    jr $ra
+# Quit Game Subroutine
+quit_game:
+    li $v0, 10              # Exit syscall
+    syscall
     # 2a. Check for collisions
     
 	# 2b. Update locations (capsules)
@@ -275,3 +486,4 @@ no_move:
 
     # 5. Go back to Step 1
     j game_loop
+
