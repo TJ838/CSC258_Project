@@ -18,6 +18,7 @@
     .data
 ##############################################################################
 # Immutable Data
+
 ##############################################################################
 # The address of the bitmap display. Don't forget to connect it!
 ADDR_DSPL:
@@ -195,11 +196,79 @@ main:
     Exit:
     li, $v0, 10
     syscall
+    
 game_loop:
+
+    jal check_input            # Handle key presses
+    jal render_scene           # Clear screen and redraw capsule
+    jal frame_delay            # Delay for 60 FPS
+    j game_loop                # Repeat
     # 1a. Check if key has been pressed
+    check_input:
+    lw $t1, ADDR_KBRD       # Load keyboard input (address of keyboard)
+    beq $t1, $zero, no_key  # If no key is pressed, skip input handling
     
     # 1b. Check which key has been pressed
+    # Rotate (W key)
+    li $t2, 0x77            # ASCII for 'w'
+    beq $t1, $t2, rotate_capsule
+
+    # Move left (A key)
+    li $t2, 0x61            # ASCII for 'a'
+    beq $t1, $t2, move_left
+
+    # Move right (D key)
+    li $t2, 0x64            # ASCII for 'd'
+    beq $t1, $t2, move_right
+
+    # Move down (S key)
+    li $t2, 0x73            # ASCII for 's'
+    beq $t1, $t2, move_down
+    
+    
+    # Quit game (Q key)
+    li $t2, 0x71            # ASCII for 'q'
+    beq $t1, $t2, quit_game
+    
+    no_key:
+    jr $ra                  # Return if no key matched
+    
+    move_left:
+    lw $t0, capsule_x          # Load current X position
+    li $t1, 0                  # Left boundary
+    bgt $t0, $t1, move_ok      # If not at boundary, move
+    jr $ra                     # Otherwise, return
+    
+    move_ok:
+    subi $t0, $t0, 4           # Decrease X position
+    sw $t0, capsule_x          # Update position
+    jr $ra
+    
+    # Move Left Subroutine
+move_left:
+    lw $t0, capsule_x          # Load current X position
+    lw $t1, capsule_y          # Load current Y position
+
+    # Check pixel to the left of the top half
+    subi $a0, $t0, 4           # X - 4 (left pixel)
+    move $a1, $t1              # Y (same row as top half)
+    jal check_pixel
+    li $t2, 0x000000           # Black color
+    bne $v0, $t2, no_move      # If not black, skip move
+
+    # Check pixel to the left of the bottom half
+    addi $a1, $t1, 4           # Y + 1 (row below for bottom half)
+    jal check_pixel
+    bne $v0, $t2, no_move      # If not black, skip move
+
+    # Move left
+    subi $t0, $t0, 1           # Decrease X position
+    sw $t0, capsule_x          # Update position
+
+no_move:
+    jr $ra
     # 2a. Check for collisions
+    
 	# 2b. Update locations (capsules)
 	# 3. Draw the screen
 	# 4. Sleep
