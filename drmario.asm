@@ -2,7 +2,7 @@
 # This file contains our implementation of Dr Mario.
 #
 # Student 1: Adeeb Nawshad, 1009812945
-# Student 2: Name, Student Number (if applicable)
+# Student 2: Taiyi Jin, 1009075796
 #
 # We assert that the code submitted here is entirely our own 
 # creation, and will indicate otherwise when it is not.
@@ -26,11 +26,12 @@ ADDR_DSPL:
 # The address of the keyboard. Don't forget to connect it!
 ADDR_KBRD:
     .word 0xffff0000
-capsule_x:          .word 16            # Initial X position (centered)
-capsule_y:          .word 53             # Initial Y position (top of bottle)
+capsule_x:          .word 10            # Initial X position (centered)
+capsule_y:          .word 4            # Initial Y position (top of bottle)
 capsule_orientation:.word 1             # Capsule orientation (1 = longitudinal, 0 = latitudinal)
 capsule_top_color:  .word 0xff0000       # Red
 capsule_bottom_color:.word 0xffff00      # Yellow
+dr_mario_grid_copy: .space 4096
 ##############################################################################
 # Mutable Data
 ##############################################################################
@@ -167,20 +168,33 @@ main:
     
     end_draw_vertical3:
     
+    lw $t0, capsule_x          # Load current X position
+    lw $t1, capsule_y          # Load current Y position
+    lw $t2, capsule_orientation # Load orientation
+
+    # Calculate base address for capsule
+    mul $t3, $t1, 32          # Row offset (row * bytes_per_row)
+    add $t3, $t3, $t0          # Column offset
+    sll $t3, $t3, 2            # Multiply by 4 (bytes_per_pixel)
+    lw $t4, ADDR_DSPL          # Base display address
+    add $t0, $t3, $t4          # Full address
+    
+    
     li $t1, 0xff0000	# $t1 = red
     li $t2, 0xffff00	# $t2 = yellow
     li $t3, 0x0000ff	# t3 = blue
     
-    lw $t0, ADDR_DSPL
-    addi $t0, $t0, 424
     sw $t1, 0($t0)          # paint the top of the capusle red
     sw $t2, 128($t0)        # paint the bottom of the capsule yellow
     
+    #capsule outside of bottle
     lw $t0, ADDR_DSPL       # Load the base address of the display
     addi $t0, $t0, 996      # Starting position
     sw $t3, 0($t0)	# New capsule top blue
     sw $t2, 128($t0)	# New capsule bottom yellow
     
+    
+    #virus positions
     lw $t0, ADDR_DSPL       # Load the base address of the display
     addi $t0, $t0, 1216      # Starting position
     sw $t3, 0($t0)
@@ -213,7 +227,7 @@ game_loop:
     lw $t2, capsule_orientation # Load orientation
 
     # Calculate base address for capsule
-    mul $t3, $t1, 128          # Row offset (row * bytes_per_row)
+    mul $t3, $t1, 32         # Row offset (row * bytes_per_row)
     add $t3, $t3, $t0          # Column offset
     sll $t3, $t3, 2            # Multiply by 4 (bytes_per_pixel)
     lw $t4, ADDR_DSPL          # Base display address
@@ -241,29 +255,32 @@ erase_vertical_capsule:
     # 1a. Check if key has been pressed
     check_input:
     lw $t1, ADDR_KBRD       # Load keyboard input (address of keyboard)
-    beq $t1, $zero, no_key  # If no key is pressed, skip input handling
+    lw $t8, 0($t1)
+    beq $t8, $zero, no_key  # If no key is pressed, skip input handling
+    
+    lw $a1, 4($t1)
     
     # 1b. Check which key has been pressed
     # Rotate (W key)
     li $t2, 0x77            # ASCII for 'w'
-    beq $t1, $t2, rotate_capsule
+    beq $a1, $t2, rotate_capsule
 
     # Move left (A key)
     li $t2, 0x61            # ASCII for 'a'
-    beq $t1, $t2, move_left
+    beq $a1, $t2, move_left
 
     # Move right (D key)
     li $t2, 0x64            # ASCII for 'd'
-    beq $t1, $t2, move_right
+    beq $a1, $t2, move_right
 
     # Move down (S key)
     li $t2, 0x73            # ASCII for 's'
-    beq $t1, $t2, move_down
+    beq $a1, $t2, move_down
     
     
     # Quit game (Q key)
     li $t2, 0x71            # ASCII for 'q'
-    beq $t1, $t2, quit_game
+    beq $a1, $t2, quit_game
     
     no_key:
     jr $ra                  # Return if no key matched
@@ -280,14 +297,28 @@ rotate_capsule:
     # Left pixel of horizontal capsule (x - 1, y)
     subi $a0, $t0, 1               # X - 1
     move $a1, $t1                  # Y
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $ra, 0($sp)              # store $ra on the stack
+
     jal check_pixel
+    
+    # restore all the registers that were stored on the stack
+    lw $ra, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
     li $t3, 0x000000               # Black color
     bne $v0, $t3, no_rotate        # If not black, skip rotation
 
     # Right pixel of horizontal capsule (x + 1, y)
     addi $a0, $t0, 1               # X + 1
     move $a1, $t1                  # Y
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $ra, 0($sp)              # store $ra on the stack
+
     jal check_pixel
+    
+    # restore all the registers that were stored on the stack
+    lw $ra, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
     bne $v0, $t3, no_rotate        # If not black, skip rotation
 
     # Rotate to horizontal
@@ -300,7 +331,14 @@ rotate_to_horizontal:
     # Bottom pixel of vertical capsule (x, y + 1)
     move $a0, $t0                  # X
     addi $a1, $t1, 1               # Y + 1
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $ra, 0($sp)              # store $ra on the stack
+
     jal check_pixel
+    
+    # restore all the registers that were stored on the stack
+    lw $ra, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
     li $t3, 0x000000               # Black color
     bne $v0, $t3, no_rotate        # If not black, skip rotation
 
@@ -322,13 +360,27 @@ move_left:
     # Longitudinal: Check left of top half
     subi $a0, $t0, 1           # X - 1 (left pixel)
     move $a1, $t1              # Y (same row as top half)
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $ra, 0($sp)              # store $ra on the stack
+
     jal check_pixel
+    
+    # restore all the registers that were stored on the stack
+    lw $ra, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
     li $t3, 0x000000           # Black color
     bne $v0, $t3, no_move      # If not black, skip move
 
     # Longitudinal: Check left of bottom half
     addi $a1, $t1, 1           # Y + 1 (row below for bottom half)
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $ra, 0($sp)              # store $ra on the stack
+
     jal check_pixel
+    
+    # restore all the registers that were stored on the stack
+    lw $ra, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
     bne $v0, $t3, no_move      # If not black, skip move
 
     # Move left
@@ -340,7 +392,14 @@ horizontal_left:
     # Latitudinal: Check left of left part
     subi $a0, $t0, 1           # X - 1 (left pixel)
     move $a1, $t1              # Y (same row)
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $ra, 0($sp)              # store $ra on the stack
+
     jal check_pixel
+    
+    # restore all the registers that were stored on the stack
+    lw $ra, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
     bne $v0, $t3, no_move      # If not black, skip move
 
     # Move left
@@ -361,13 +420,27 @@ move_right:
     # Longitudinal: Check right of top half
     addi $a0, $t0, 1           # X + 1 (right pixel)
     move $a1, $t1              # Y (same row as top half)
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $ra, 0($sp)              # store $ra on the stack
+
     jal check_pixel
+    
+    # restore all the registers that were stored on the stack
+    lw $ra, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
     li $t3, 0x000000           # Black color
     bne $v0, $t3, no_move      # If not black, skip move
 
     # Longitudinal: Check right of bottom half
     addi $a1, $t1, 1           # Y + 1 (row below for bottom half)
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $ra, 0($sp)              # store $ra on the stack
+
     jal check_pixel
+    
+    # restore all the registers that were stored on the stack
+    lw $ra, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
     bne $v0, $t3, no_move      # If not black, skip move
 
     # Move right
@@ -379,7 +452,14 @@ horizontal_right:
     # Latitudinal: Check right of right part
     addi $a0, $t0, 1           # X + 1 (right pixel)
     move $a1, $t1              # Y (same row)
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $ra, 0($sp)              # store $ra on the stack
+
     jal check_pixel
+    
+    # restore all the registers that were stored on the stack
+    lw $ra, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
     bne $v0, $t3, no_move      # If not black, skip move
 
     # Move right
@@ -400,7 +480,14 @@ move_down:
     # Longitudinal: Check below the bottom half
     move $a0, $t0              # X (same column)
     addi $a1, $t1, 2           # Y + 2 (row below bottom half)
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $ra, 0($sp)              # store $ra on the stack
+
     jal check_pixel
+    
+    # restore all the registers that were stored on the stack
+    lw $ra, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
     li $t3, 0x000000           # Black color
     bne $v0, $t3, no_move      # If not black, skip move
 
@@ -413,13 +500,27 @@ horizontal_down:
     # Latitudinal: Check below left part
     move $a0, $t0              # X (left part)
     addi $a1, $t1, 1           # Y + 1
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $ra, 0($sp)              # store $ra on the stack
+
     jal check_pixel
+    
+    # restore all the registers that were stored on the stack
+    lw $ra, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
     bne $v0, $t3, no_move      # If not black, skip move
 
     # Latitudinal: Check below right part
     addi $a0, $t0, 1           # X + 1 (right part)
     addi $a1, $t1, 1           # Y + 1
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $ra, 0($sp)              # store $ra on the stack
+
     jal check_pixel
+    
+    # restore all the registers that were stored on the stack
+    lw $ra, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
     bne $v0, $t3, no_move      # If not black, skip move
 
     # Move down
@@ -429,11 +530,11 @@ horizontal_down:
     
 # Check Pixel Subroutine
 check_pixel:
-    mul $t0, $a1, 128       # Y * row increment (128 bytes per row)
+    mul $t0, $a1, 32       # Y * row increment (128 bytes per row)
     add $t0, $t0, $a0       # Add X position
     sll $t0, $t0, 2         # Multiply by 4 (word size)
-    lw $t1, ADDR_DSPL       # Load base display base address
-    add $t0, $t0, $t1       # Add base address to get pixel address
+    lw $t9, ADDR_DSPL       # Load base display base address
+    add $t0, $t0, $t9       # Add base address to get pixel address
 
     lw $v0, 0($t0)          # Load the pixel color
     jr $ra
@@ -444,7 +545,7 @@ draw_capsule:
     lw $t1, capsule_y          # Y position
     lw $t2, capsule_orientation # Orientation
 
-    mul $t3, $t1, 128          # Calculate base address
+    mul $t3, $t1, 32          # Calculate base address
     add $t3, $t3, $t0
     sll $t3, $t3, 2
     lw $t4, ADDR_DSPL          # Base address
@@ -455,6 +556,7 @@ draw_capsule:
     lw $t6, capsule_bottom_color
 
     sw $t5, 0($t3)             # Top half
+    
     bnez $t2, vertical_capsule # If vertical, handle vertical case
 
     # Horizontal: Draw right half
@@ -469,7 +571,7 @@ vertical_capsule:
 
 # Frame Delay Subroutine
 frame_delay:
-    li $t0, 1000000          # Adjust this value for your system
+    li $t0, 100         # Adjust this value for your system
 frame_delay_loop:
     subi $t0, $t0, 1
     bnez $t0, frame_delay_loop
