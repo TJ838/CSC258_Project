@@ -426,6 +426,7 @@ game_loop:
     jal erase_capsule
     jal check_input            # Handle key presses
     jal draw_capsule
+    jal check_collision
     jal frame_delay            # Delay for 60 FPS
     j game_loop                # Repeat
     
@@ -506,7 +507,7 @@ rotate_capsule:
 
     # Check if longitudinal position is valid
     # Left pixel of horizontal capsule (x - 1, y)
-    subi $a0, $t0, 1               # X - 1
+    subi $a0, $t0, -1               # X - 1
     move $a1, $t1                  # Y
     addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
     sw $ra, 0($sp)              # store $ra on the stack
@@ -804,6 +805,67 @@ vertical_capsule:
     addi $t3, $t3, 128         # Move down
     sw $t6, 0($t3)
     jr $ra
+
+# Check collision and generate a new capsule at the top
+check_collision:
+lw $t0, capsule_x          # Load current X position
+    lw $t1, capsule_y          # Load current Y position
+    lw $t2, capsule_orientation # Load current orientation
+
+    beqz $t2, horizontal_collision_check  # If horizontal, check below both parts
+
+    # Longitudinal: Check below the bottom half
+    move $a0, $t0              # X (same column)
+    addi $a1, $t1, 2           # Y + 2 (row below bottom half)
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $ra, 0($sp)              # store $ra on the stack
+
+    jal check_pixel
+    lw $t0, capsule_x          # Load current X position
+    lw $t1, capsule_y          # Load current Y position
+        li $t3, 0x000000           # Black color
+    # restore all the registers that were stored on the stack
+    lw $ra, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+    li $t3, 0x000000           # Black color
+    bne $v0, $t3, start_random_capsule      # If not black, skip move
+
+jr $ra
+
+horizontal_collision_check:
+    # Latitudinal: Check below left part
+    move $a0, $t0              # X (left part)
+    addi $a1, $t1, 1           # Y + 1
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $ra, 0($sp)              # store $ra on the stack
+
+    jal check_pixel
+    lw $t0, capsule_x          # Load current X position
+    lw $t1, capsule_y          # Load current Y position
+        li $t3, 0x000000           # Black color
+    # restore all the registers that were stored on the stack
+    lw $ra, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+    bne $v0, $t3, start_random_capsule      # If not black, skip move
+
+    # Latitudinal: Check below right part
+    addi $a0, $t0, 1           # X + 1 (right part)
+    addi $a1, $t1, 1           # Y + 1
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $ra, 0($sp)              # store $ra on the stack
+
+    jal check_pixel
+    lw $t0, capsule_x          # Load current X position
+    lw $t1, capsule_y          # Load current Y position
+        li $t3, 0x000000           # Black color
+    # restore all the registers that were stored on the stack
+    lw $ra, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+    bne $v0, $t3, start_random_capsule      # If not black, skip move
+
+    jr $ra
+
+
 
 # Frame Delay Subroutine
 frame_delay:
