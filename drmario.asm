@@ -32,6 +32,20 @@ capsule_orientation:.word 1             # Capsule orientation (1 = longitudinal,
 capsule_top_color:  .word 0xff0000       # Red
 capsule_bottom_color:.word 0xffff00      # Yellow
 dr_mario_grid_copy: .space 4096
+color_red:    .word 0xFF0000   # RGB value for red
+color_blue:   .word 0x0000FF   # RGB value for blue
+color_yellow: .word 0xFFFF00   # RGB value for yellow
+virus_red:    .word 0x710627   # RGB value for red
+virus_blue:   .word 0x73D2DE   # RGB value for blue
+virus_yellow: .word 0xFFD972   # RGB value for yellow
+virus_color_1:    .word 0xD88373   # RGB value for red
+virus_color_2:   .word 0x73D2DE   # RGB value for blue
+virus_color_3: .word 0xFFD972   # RGB value for yellow
+virus_color_4:    .word 0xD88373   # RGB value for red
+virus_position_1: .word 0x000000 #position for virus 1
+virus_position_2: .word 0x000000 #position for virus 2
+virus_position_3: .word 0x000000 #position for virus 3
+virus_position_4: .word 0x000000 #position for virus 4
 ##############################################################################
 # Mutable Data
 ##############################################################################
@@ -166,11 +180,88 @@ main:
     addi $t5, $t5, 1        # Increment $t5 by 1
     j draw_vertical_loop3    # Jump to start of vertical drawing loop
     
-    end_draw_vertical3:
     
-    lw $t0, capsule_x          # Load current X position
-    lw $t1, capsule_y          # Load current Y position
-    lw $t2, capsule_orientation # Load orientation
+    # Choose random color for the capsule we would draw at the top
+    end_draw_vertical3:
+jal start_random_capsule
+j draw_other_element
+
+start_random_capsule:
+
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+sw $v0, 0($sp)              # store $ra on the stack
+addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+sw $a0, 0($sp)              # store $ra on the stack
+addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+sw $a1, 0($sp)              # store $ra on the stack
+addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+sw $ra, 0($sp)              # store $ra on the stack    
+
+
+initial_random_top:
+
+li $v0 , 42
+li $a0 , 0
+li $a1 , 3
+syscall
+
+beq $a0, 0, save_red_top        # If $a0 == 0, branch to save_red
+    beq $a0, 1, save_blue_top       # If $a0 == 1, branch to save_blue
+    beq $a0, 2, save_yellow_top     # If $a0 == 2, branch to save_yellow
+
+
+save_red_top:
+    lw $t0, color_red              # Load the red color into $t0
+    sw $t0, capsule_top_color         # Save the red color to Capsule_color
+    j initial_random_bottom                          # Jump to end
+
+save_blue_top:
+    lw $t0, color_blue             # Load the blue color into $t0
+    sw $t0, capsule_top_color         # Save the blue color to Capsule_color
+    j initial_random_bottom                          # Jump to end
+
+save_yellow_top:
+    lw $t0, color_yellow           # Load the yellow color into $t0
+    sw $t0, capsule_top_color          # Save the yellow color to Capsule_color
+    j initial_random_bottom
+
+
+initial_random_bottom:
+li $v0 , 42
+li $a0 , 0
+li $a1 , 3
+syscall
+
+beq $a0, 0, save_red_bottom        # If $a0 == 0, branch to save_red
+    beq $a0, 1, save_blue_bottom      # If $a0 == 1, branch to save_blue
+    beq $a0, 2, save_yellow_bottom     # If $a0 == 2, branch to save_yellow
+
+
+save_red_bottom:
+    lw $t0, color_red              # Load the red color into $t0
+    sw $t0, capsule_bottom_color         # Save the red color to Capsule_color
+    j initial_random_done                          # Jump to end
+
+save_blue_bottom:
+    lw $t0, color_blue             # Load the blue color into $t0
+    sw $t0, capsule_bottom_color         # Save the blue color to Capsule_color
+    j initial_random_done                          # Jump to end
+
+save_yellow_bottom:
+    lw $t0, color_yellow           # Load the yellow color into $t0
+    sw $t0, capsule_bottom_color          # Save the yellow color to Capsule_color
+    j initial_random_done
+    
+initial_random_done:
+
+li $t0, 10
+li $t1, 4
+li $t2, 1
+
+
+    sw $t0, capsule_x          # Save current X position
+    sw $t1, capsule_y          # Save current Y position
+    sw $t2, capsule_orientation # Save orientation
 
     # Calculate base address for capsule
     mul $t3, $t1, 32          # Row offset (row * bytes_per_row)
@@ -179,13 +270,29 @@ main:
     lw $t4, ADDR_DSPL          # Base display address
     add $t0, $t3, $t4          # Full address
     
+    lw $t1, capsule_top_color
+    lw $t2, capsule_bottom_color
     
-    li $t1, 0xff0000	# $t1 = red
-    li $t2, 0xffff00	# $t2 = yellow
-    li $t3, 0x0000ff	# t3 = blue
+    sw $t1, 0($t0)          # paint the top of the capusle
+    sw $t2, 128($t0)        # paint the bottom of the capsule 
     
-    sw $t1, 0($t0)          # paint the top of the capusle red
-    sw $t2, 128($t0)        # paint the bottom of the capsule yellow
+    # restore all the registers that were stored on the stack
+lw $ra, 0($sp)              # restore $ra from the stack
+addi $sp, $sp, 4            # move the stack pointer to the new top element
+# restore all the registers that were stored on the stack
+lw $a1, 0($sp)              # restore $ra from the stack
+addi $sp, $sp, 4            # move the stack pointer to the new top element
+# restore all the registers that were stored on the stack
+lw $a0, 0($sp)              # restore $ra from the stack
+addi $sp, $sp, 4            # move the stack pointer to the new top element
+# restore all the registers that were stored on the stack
+lw $v0, 0($sp)              # restore $ra from the stack
+addi $sp, $sp, 4            # move the stack pointer to the new top element
+    
+    jr $ra
+    
+    
+draw_other_element:    
     
     #capsule outside of bottle
     lw $t0, ADDR_DSPL       # Load the base address of the display
@@ -193,26 +300,127 @@ main:
     sw $t3, 0($t0)	# New capsule top blue
     sw $t2, 128($t0)	# New capsule bottom yellow
     
+
     
-    #virus positions
-    lw $t0, ADDR_DSPL       # Load the base address of the display
-    addi $t0, $t0, 1216      # Starting position
-    sw $t3, 0($t0)
     
-    lw $t0, ADDR_DSPL       # Load the base address of the display
-    addi $t0, $t0, 2224     # Starting position
-    sw $t3, 0($t0)
-    
-    lw $t0, ADDR_DSPL       # Load the base address of the display
-    addi $t0, $t0, 2452
-    sw $t2, 0($t0)
-    
-    lw $t0, ADDR_DSPL       # Load the base address of the display
-    addi $t0, $t0, 3104
-    sw $t2, 0($t0)
-    
-        j game_loop
-    
+draw_virus:
+
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+sw $v0, 0($sp)              # store $ra on the stack
+addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+sw $a0, 0($sp)              # store $ra on the stack
+addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+sw $a1, 0($sp)              # store $ra on the stack
+addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+sw $ra, 0($sp)              # store $ra on the stack  
+
+
+jal draw_one_virus_color
+sw $t0, virus_color_1
+jal draw_one_virus_position
+lw $t0, virus_color_1
+sw $a1, virus_position_1
+sw $t0, 0($a1)          # paint virus 1
+
+jal draw_one_virus_color
+sw $t0, virus_color_2
+jal draw_one_virus_position
+lw $t0, virus_color_2
+sw $a1, virus_position_2
+sw $t0, 0($a1)          # paint virus 2
+
+jal draw_one_virus_color
+sw $t0, virus_color_3
+jal draw_one_virus_position
+lw $t0, virus_color_3
+sw $a1, virus_position_3
+sw $t0, 0($a1)          # paint virus 3
+
+jal draw_one_virus_color
+sw $t0, virus_color_4
+jal draw_one_virus_position
+lw $t0, virus_color_4
+sw $a1, virus_position_4
+sw $t0, 0($a1)          # paint virus 4
+
+    # restore all the registers that were stored on the stack
+lw $ra, 0($sp)              # restore $ra from the stack
+addi $sp, $sp, 4            # move the stack pointer to the new top element
+# restore all the registers that were stored on the stack
+lw $a1, 0($sp)              # restore $ra from the stack
+addi $sp, $sp, 4            # move the stack pointer to the new top element
+# restore all the registers that were stored on the stack
+lw $a0, 0($sp)              # restore $ra from the stack
+addi $sp, $sp, 4            # move the stack pointer to the new top element
+# restore all the registers that were stored on the stack
+lw $v0, 0($sp)              # restore $ra from the stack
+addi $sp, $sp, 4            # move the stack pointer to the new top element
+
+
+#the last thing to draw before the game starts is the viruses
+j game_loop
+
+draw_one_virus_color:
+li $v0 , 42
+li $a0 , 0
+li $a1 , 3
+syscall
+
+beq $a0, 0, save_red_virus        # If $a0 == 0, branch to save_red
+    beq $a0, 1, save_blue_virus      # If $a0 == 1, branch to save_blue
+    beq $a0, 2, save_yellow_virus     # If $a0 == 2, branch to save_yellow
+
+
+save_red_virus:
+    lw $t0, virus_red              # Load the red color into $t0
+
+    jr $ra                          # Jump to end
+
+save_blue_virus:
+    lw $t0, virus_blue             # Load the blue color into $t0
+
+    jr $ra                          # Jump to end
+
+save_yellow_virus:
+    lw $t0, virus_yellow           # Load the yellow color into $t0
+
+    jr $ra                          # Jump to end
+ 
+
+draw_one_virus_position:
+#random position for x
+li $v0 , 42
+li $a0 , 0
+li $a1 , 16
+syscall
+
+addi $t8, $a0, 3
+
+
+#random position for y
+li $v0 , 42
+li $a0 , 0
+li $a1 , 11
+syscall
+
+addi $t9, $a0, 19
+
+
+# Calculate base address for capsule
+    mul $t3, $t9, 32          # Row offset (row * bytes_per_row)
+    add $t3, $t3, $t8          # Column offset
+    sll $t3, $t3, 2            # Multiply by 4 (bytes_per_pixel)
+    lw $t4, ADDR_DSPL          # Base display address
+    add $a1, $t3, $t4          # Full address
+
+jr $ra
+
+
+
+
+# The game loop starts here ---------------------------------------------------------------------------------
+
+
 game_loop:
 
     jal erase_capsule
@@ -220,6 +428,9 @@ game_loop:
     jal draw_capsule
     jal frame_delay            # Delay for 60 FPS
     j game_loop                # Repeat
+    
+
+# The game loop ends here -----------------------------------------------------------------------------------
     
     erase_capsule:
     lw $t0, capsule_x          # Load current X position
@@ -467,7 +678,7 @@ move_right:
 
 horizontal_right:
     # Latitudinal: Check right of right part
-    addi $a0, $t0, 1           # X + 1 (right pixel)
+    addi $a0, $t0, 2           # X + 1 (right pixel)
     move $a1, $t1              # Y (same row)
     addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
     sw $ra, 0($sp)              # store $ra on the stack
