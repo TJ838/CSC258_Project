@@ -301,7 +301,9 @@ rotate_capsule:
     sw $ra, 0($sp)              # store $ra on the stack
 
     jal check_pixel
-    
+    lw $t0, capsule_x          # Load current X position
+    lw $t1, capsule_y          # Load current Y position
+        li $t3, 0x000000           # Black color
     # restore all the registers that were stored on the stack
     lw $ra, 0($sp)              # restore $ra from the stack
     addi $sp, $sp, 4            # move the stack pointer to the new top element
@@ -315,7 +317,9 @@ rotate_capsule:
     sw $ra, 0($sp)              # store $ra on the stack
 
     jal check_pixel
-    
+    lw $t0, capsule_x          # Load current X position
+    lw $t1, capsule_y          # Load current Y position
+        li $t3, 0x000000           # Black color
     # restore all the registers that were stored on the stack
     lw $ra, 0($sp)              # restore $ra from the stack
     addi $sp, $sp, 4            # move the stack pointer to the new top element
@@ -335,7 +339,9 @@ rotate_to_horizontal:
     sw $ra, 0($sp)              # store $ra on the stack
 
     jal check_pixel
-    
+    lw $t0, capsule_x          # Load current X position
+    lw $t1, capsule_y          # Load current Y position
+        li $t3, 0x000000           # Black color
     # restore all the registers that were stored on the stack
     lw $ra, 0($sp)              # restore $ra from the stack
     addi $sp, $sp, 4            # move the stack pointer to the new top element
@@ -364,7 +370,10 @@ move_left:
     sw $ra, 0($sp)              # store $ra on the stack
 
     jal check_pixel
-    
+
+    lw $t0, capsule_x          # Load current X position
+    lw $t1, capsule_y          # Load current Y position
+        li $t3, 0x000000           # Black color
     # restore all the registers that were stored on the stack
     lw $ra, 0($sp)              # restore $ra from the stack
     addi $sp, $sp, 4            # move the stack pointer to the new top element
@@ -377,7 +386,9 @@ move_left:
     sw $ra, 0($sp)              # store $ra on the stack
 
     jal check_pixel
-    
+    lw $t0, capsule_x          # Load current X position
+    lw $t1, capsule_y          # Load current Y position
+        li $t3, 0x000000           # Black color
     # restore all the registers that were stored on the stack
     lw $ra, 0($sp)              # restore $ra from the stack
     addi $sp, $sp, 4            # move the stack pointer to the new top element
@@ -396,7 +407,9 @@ horizontal_left:
     sw $ra, 0($sp)              # store $ra on the stack
 
     jal check_pixel
-    
+    lw $t0, capsule_x          # Load current X position
+    lw $t1, capsule_y          # Load current Y position
+        li $t3, 0x000000           # Black color
     # restore all the registers that were stored on the stack
     lw $ra, 0($sp)              # restore $ra from the stack
     addi $sp, $sp, 4            # move the stack pointer to the new top element
@@ -424,7 +437,9 @@ move_right:
     sw $ra, 0($sp)              # store $ra on the stack
 
     jal check_pixel
-    
+    lw $t0, capsule_x          # Load current X position
+    lw $t1, capsule_y          # Load current Y position
+        li $t3, 0x000000           # Black color
     # restore all the registers that were stored on the stack
     lw $ra, 0($sp)              # restore $ra from the stack
     addi $sp, $sp, 4            # move the stack pointer to the new top element
@@ -437,7 +452,9 @@ move_right:
     sw $ra, 0($sp)              # store $ra on the stack
 
     jal check_pixel
-    
+    lw $t0, capsule_x          # Load current X position
+    lw $t1, capsule_y          # Load current Y position
+        li $t3, 0x000000           # Black color
     # restore all the registers that were stored on the stack
     lw $ra, 0($sp)              # restore $ra from the stack
     addi $sp, $sp, 4            # move the stack pointer to the new top element
@@ -456,7 +473,9 @@ horizontal_right:
     sw $ra, 0($sp)              # store $ra on the stack
 
     jal check_pixel
-    
+    lw $t0, capsule_x          # Load current X position
+    lw $t1, capsule_y          # Load current Y position
+        li $t3, 0x000000           # Black color
     # restore all the registers that were stored on the stack
     lw $ra, 0($sp)              # restore $ra from the stack
     addi $sp, $sp, 4            # move the stack pointer to the new top element
@@ -484,7 +503,9 @@ move_down:
     sw $ra, 0($sp)              # store $ra on the stack
 
     jal check_pixel
-    
+    lw $t0, capsule_x          # Load current X position
+    lw $t1, capsule_y          # Load current Y position
+        li $t3, 0x000000           # Black color
     # restore all the registers that were stored on the stack
     lw $ra, 0($sp)              # restore $ra from the stack
     addi $sp, $sp, 4            # move the stack pointer to the new top element
@@ -504,7 +525,9 @@ horizontal_down:
     sw $ra, 0($sp)              # store $ra on the stack
 
     jal check_pixel
-    
+    lw $t0, capsule_x          # Load current X position
+    lw $t1, capsule_y          # Load current Y position
+        li $t3, 0x000000           # Black color
     # restore all the registers that were stored on the stack
     lw $ra, 0($sp)              # restore $ra from the stack
     addi $sp, $sp, 4            # move the stack pointer to the new top element
@@ -517,7 +540,9 @@ horizontal_down:
     sw $ra, 0($sp)              # store $ra on the stack
 
     jal check_pixel
-    
+    lw $t0, capsule_x          # Load current X position
+    lw $t1, capsule_y          # Load current Y position
+        li $t3, 0x000000           # Black color
     # restore all the registers that were stored on the stack
     lw $ra, 0($sp)              # restore $ra from the stack
     addi $sp, $sp, 4            # move the stack pointer to the new top element
