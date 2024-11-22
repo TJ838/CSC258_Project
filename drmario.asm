@@ -55,8 +55,12 @@ column_end_pos: .word 0 # the ending position of capsules in a column
 row_start_pos: .word 0 # the starting position of capsules in a row
 row_end_pos: .word 0 # the ending position of capsules in a row
 count_consecutive: .word 1 # the number of consecutive capsules
+
+#gravity variables
+global_timer:  .word 0     # Tracks the passage of time (global loop counter)
 gravity_timer: .word 0
 gravity_threshold: .word 240    # Threshold for triggering gravity
+min_gravity:       .word 10	 # Minimum threshold (fastest speed)
 ##############################################################################
 # Mutable Data
 ##############################################################################
@@ -446,15 +450,28 @@ jr $ra
 game_loop:
 
     jal erase_capsule
-    jal check_input            # Handle key presses              
+    jal check_input            # Handle key presses   
+    # Increment global timer
+    lw $t0, global_timer
+    addi $t0, $t0, 1
+    sw $t0, global_timer           
     # Increment gravity timer
     lw $t2, gravity_timer       # Load gravity_timer
     addi $t2, $t2, 1            # Increment timer by 1
     sw $t2, gravity_timer       # Store updated timer
 
-    # Check if timer reaches threshold
+    # Check if gravity timer reaches threshold
     lw $t3, gravity_threshold   # Load gravity threshold
     bge $t2, $t3, trigger_gravity # If timer >= threshold, trigger gravity
+    
+    # Check for gravity speed adjustment (over time)
+    lw $t0, global_timer
+    li $t4, 100                 # Time interval for adjusting gravity
+    rem $t5, $t0, $t4           # Check if global_timer is divisible by 100
+    bnez $t5, skip_adjustment   # If not divisible, skip adjustment
+
+    jal adjust_gravity_speed    # Adjust gravity speed
+    
     jal draw_capsule
     jal check_collision
     jal frame_delay            # Delay for 60 FPS
@@ -802,6 +819,12 @@ horizontal_down:
     addi $t1, $t1, 1           # Increase Y position
     sw $t1, capsule_y          # Update position
 
+skip_adjustment:
+    jal draw_capsule            # Draw capsule at the current position
+    jal check_collision         # Check for collisions
+    jal frame_delay             # Delay for 60 FPS
+    j game_loop                 # Repeat
+
 # Trigger Gravity
 trigger_gravity:
     li $t2, 0                   # Reset gravity_timer
@@ -811,6 +834,18 @@ trigger_gravity:
     jal move_down               # Move the capsule down
 
     j game_loop                 # Return to game loop
+    
+adjust_gravity_speed:
+    lw $t3, gravity_threshold   # Load current gravity threshold
+    subi $t3, $t3, 1          # Reduce threshold by 1(speeds up gravity)
+    lw $t4, min_gravity         # Load minimum gravity threshold
+    bge $t3, $t4, update_threshold # Ensure threshold doesn't go below min_gravity
+    move $t3, $t4               # Set threshold to min_gravity if exceeded
+
+update_threshold:
+    sw $t3, gravity_threshold   # Update gravity threshold
+    jr $ra                      # Return to game loop
+
 # Check Pixel Subroutine
 check_pixel:
     mul $t0, $a1, 32       # Y * row increment (128 bytes per row)
