@@ -46,6 +46,15 @@ virus_position_1: .word 0x000000 #position for virus 1
 virus_position_2: .word 0x000000 #position for virus 2
 virus_position_3: .word 0x000000 #position for virus 3
 virus_position_4: .word 0x000000 #position for virus 4
+virus_exist_1: .word 1 #existence of virus 1
+virus_exist_2: .word 1 #existence of virus 2
+virus_exist_3: .word 1 #existence of virus 3
+virus_exist_4: .word 1 #existence of virus 4
+column_start_pos: .word 0 # the starting position of capsules in a column
+column_end_pos: .word 0 # the ending position of capsules in a column
+row_start_pos: .word 0 # the starting position of capsules in a row
+row_end_pos: .word 0 # the ending position of capsules in a row
+count_consecutive: .word 1 # the number of consecutive capsules
 ##############################################################################
 # Mutable Data
 ##############################################################################
@@ -272,6 +281,17 @@ li $t2, 1
     
     lw $t1, capsule_top_color
     lw $t2, capsule_bottom_color
+    
+    li $t3, 0x000000           # Black color
+    lw $t4, 128($t0)
+
+    bne $t4, $t3, game_over      # If not black, the entrance is blocked, game over
+    
+    lw $t4, -4($t0)
+    bne $t4, $t3, game_over
+    
+    lw $t4, 4($t0)
+    bne $t4, $t3, game_over
     
     sw $t1, 0($t0)          # paint the top of the capusle
     sw $t2, 128($t0)        # paint the bottom of the capsule 
@@ -540,6 +560,13 @@ rotate_capsule:
     # Rotate to horizontal
     li $t2, 0                      # Update to horizontal
     sw $t2, capsule_orientation
+    
+    #If vertical, change the two colors so that it rotates 360 degrees
+    lw $t0, capsule_top_color             
+    lw $t1, capsule_bottom_color 
+    sw $t1, capsule_top_color
+    sw $t0, capsule_bottom_color
+    
     jr $ra
 
 rotate_to_horizontal:
@@ -828,7 +855,7 @@ lw $t0, capsule_x          # Load current X position
     lw $ra, 0($sp)              # restore $ra from the stack
     addi $sp, $sp, 4            # move the stack pointer to the new top element
     li $t3, 0x000000           # Black color
-    bne $v0, $t3, start_random_capsule      # If not black, skip move
+    bne $v0, $t3, destroy_capsules_column      # If not black, skip move
 
 jr $ra
 
@@ -846,7 +873,7 @@ horizontal_collision_check:
     # restore all the registers that were stored on the stack
     lw $ra, 0($sp)              # restore $ra from the stack
     addi $sp, $sp, 4            # move the stack pointer to the new top element
-    bne $v0, $t3, start_random_capsule      # If not black, skip move
+    bne $v0, $t3, destroy_capsules_column      # If not black, skip move
 
     # Latitudinal: Check below right part
     addi $a0, $t0, 1           # X + 1 (right part)
@@ -861,9 +888,669 @@ horizontal_collision_check:
     # restore all the registers that were stored on the stack
     lw $ra, 0($sp)              # restore $ra from the stack
     addi $sp, $sp, 4            # move the stack pointer to the new top element
-    bne $v0, $t3, start_random_capsule      # If not black, skip move
+    bne $v0, $t3, destroy_capsules_column      # If not black, skip move
 
     jr $ra
+
+
+
+
+# Destroy any capsules that appear in a column
+destroy_capsules_column:
+
+
+ addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $ra, 0($sp)              # store $ra on the stack
+    
+    
+start_destroy_capsule_column_loop:
+li $t6, 5 #lower limit for the rows to check 
+li $t7, 30 #upper limit for the rows to check 
+li $t8, 2 #lower limit for the columns to check 
+li $t9, 19 #upper limit for the columns to check 
+
+
+outer_loop_column_check_capsule:
+    bge $t8, $t9, end_outer_column_check_capsule      # If i >= outer_limit, exit outer loop
+
+inner_loop_column_check_capsule:
+    bge $t6, $t7, end_inner_column_check_capsule      # If j >= inner_limit, exit inner loop
+    
+    # find current address, save the current address
+    mul $t3, $t8, 32         # Row offset (row * bytes_per_row)
+    add $t3, $t3, $t6          # Column offset
+    sll $t3, $t3, 2            # Multiply by 4 (bytes_per_pixel)
+    lw $t4, ADDR_DSPL          # Base display address
+    add $t3, $t3, $t4          # Full address    
+    
+    #save the starting position of the consecutive capsules
+    sw $t3, column_start_pos
+    
+    # Load the colors to check
+    lw $s0, color_red
+    lw $s1, color_blue
+    lw $s2, color_yellow
+    lw $s3, virus_red
+    lw $s4, virus_blue
+    lw $s5, virus_yellow
+    
+    
+    # if current address has color red, yellow, or blue, including the virus colors
+    lw $v0, 0($t3)
+    
+    beq $v0, $s0, column_red_loop
+    beq $v0, $s3, column_red_loop
+    beq $v0, $s1, column_blue_loop
+    beq $v0, $s4, column_blue_loop
+    beq $v0, $s2, column_yellow_loop
+    beq $v0, $s5, column_yellow_loop
+    j column_no_loop
+    
+    column_red_loop:
+    addi $t3, $t3, 128
+    
+    lw $v0, 0($t3)
+    
+    beq $v0, $s0, column_red_loop_continue
+    beq $v0, $s3, column_red_loop_continue
+    j column_consecutive_end
+    
+    column_red_loop_continue:
+    
+    lw $t0, count_consecutive
+    addi $t0, $t0, 1
+    sw $t0, count_consecutive
+    j column_red_loop
+    
+    
+    column_blue_loop:
+    addi $t3, $t3, 128
+    
+    lw $v0, 0($t3)
+    
+    beq $v0, $s1, column_blue_loop_continue
+    beq $v0, $s4, column_blue_loop_continue
+    j column_consecutive_end
+    
+    column_blue_loop_continue:
+    
+    lw $t0, count_consecutive
+    addi $t0, $t0, 1
+    sw $t0, count_consecutive
+    j column_blue_loop
+    
+    
+    column_yellow_loop:
+    addi $t3, $t3, 128
+    
+    lw $v0, 0($t3)
+    
+    beq $v0, $s1, column_yellow_loop_continue
+    beq $v0, $s4, column_yellow_loop_continue
+    j column_consecutive_end
+    
+    column_yellow_loop_continue:
+    
+    lw $t0, count_consecutive
+    addi $t0, $t0, 1
+    sw $t0, count_consecutive
+    j column_yellow_loop
+    
+    
+    # finished until the next capsule is not the same color
+    column_consecutive_end:
+    # if count is greater equal to 4, calculate and save the current address as the end address, jump and link to the clear function
+    lw $t0, count_consecutive    # Load count_consecutive into $t0
+    li $t1, 4
+    # Return count_consecutive to 1
+    li $t2, 1
+    sw $t2, count_consecutive
+    
+    bge $t0, $t1, column_to_clear
+    
+    j column_no_loop
+    
+    column_to_clear:
+    # calculate and save the end address
+    sw $t3, column_end_pos
+    jal clear_column
+    # jump back to start_destroy_capsule_column_loop
+    j start_destroy_capsule_column_loop
+    
+    
+column_no_loop:
+    addi $t6, $t6, 1             # j++
+    
+    j inner_loop_column_check_capsule                 # Repeat inner loop
+
+end_inner_column_check_capsule:
+    addi $t8, $t8, 1             # i++
+    j outer_loop_column_check_capsule               # Repeat outer loop
+
+end_outer_column_check_capsule:
+
+# restore all the registers that were stored on the stack
+    lw $ra, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+
+j destroy_capsules_row
+
+
+
+
+
+
+
+# Destroy any capsules that appear in a column
+destroy_capsules_row:
+
+
+ addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $ra, 0($sp)              # store $ra on the stack
+    
+    
+start_destroy_capsule_row_loop:
+li $t6, 5 #lower limit for the rows to check 
+li $t7, 30 #upper limit for the rows to check 
+li $t8, 2 #lower limit for the columns to check 
+li $t9, 19 #upper limit for the columns to check 
+
+
+outer_loop_row_check_capsule:
+    bge $t6, $t7, end_outer_row_check_capsule      # If i >= outer_limit, exit outer loop
+
+inner_loop_row_check_capsule:
+    bge $t8, $t9, end_inner_row_check_capsule      # If j >= inner_limit, exit inner loop
+    
+    # find current address, save the current address
+    mul $t3, $t8, 32         # Row offset (row * bytes_per_row)
+    add $t3, $t3, $t6          # Column offset
+    sll $t3, $t3, 2            # Multiply by 4 (bytes_per_pixel)
+    lw $t4, ADDR_DSPL          # Base display address
+    add $t3, $t3, $t4          # Full address    
+    
+    #save the starting position of the consecutive capsules
+    sw $t3, row_start_pos
+    
+    # Load the colors to check
+    lw $s0, color_red
+    lw $s1, color_blue
+    lw $s2, color_yellow
+    lw $s3, virus_red
+    lw $s4, virus_blue
+    lw $s5, virus_yellow
+    
+    
+    # if current address has color red, yellow, or blue, including the virus colors
+    lw $v0, 0($t3)
+    
+    beq $v0, $s0, row_red_loop
+    beq $v0, $s3, row_red_loop
+    beq $v0, $s1, row_blue_loop
+    beq $v0, $s4, row_blue_loop
+    beq $v0, $s2, row_yellow_loop
+    beq $v0, $s5, row_yellow_loop
+    j row_no_loop
+    
+    row_red_loop:
+    addi $t3, $t3, 4
+    
+    lw $v0, 0($t3)
+    
+    beq $v0, $s0, row_red_loop_continue
+    beq $v0, $s3, row_red_loop_continue
+    j row_consecutive_end
+    
+    row_red_loop_continue:
+    
+    lw $t0, count_consecutive
+    addi $t0, $t0, 1
+    sw $t0, count_consecutive
+    j row_red_loop
+    
+    
+    row_blue_loop:
+    addi $t3, $t3, 4
+    
+    lw $v0, 0($t3)
+    
+    beq $v0, $s1, row_blue_loop_continue
+    beq $v0, $s4, row_blue_loop_continue
+    j row_consecutive_end
+    
+    row_blue_loop_continue:
+    
+    lw $t0, count_consecutive
+    addi $t0, $t0, 1
+    sw $t0, count_consecutive
+    j row_blue_loop
+    
+    
+    row_yellow_loop:
+    addi $t3, $t3, 4
+    
+    lw $v0, 0($t3)
+    
+    beq $v0, $s1, row_yellow_loop_continue
+    beq $v0, $s4, row_yellow_loop_continue
+    j row_consecutive_end
+    
+    row_yellow_loop_continue:
+    
+    lw $t0, count_consecutive
+    addi $t0, $t0, 1
+    sw $t0, count_consecutive
+    j row_yellow_loop
+    
+    
+    # finished until the next capsule is not the same color
+    row_consecutive_end:
+    # if count is greater equal to 4, calculate and save the current address as the end address, jump and link to the clear function
+    lw $t0, count_consecutive    # Load count_consecutive into $t0
+    li $t1, 4
+    # Return count_consecutive to 1
+    li $t2, 1
+    sw $t2, count_consecutive
+    
+    bge $t0, $t1, row_to_clear
+    
+    j row_no_loop
+    
+    row_to_clear:
+    # calculate and save the end address
+    sw $t3, row_end_pos
+    jal clear_row
+    # jump back to start_destroy_capsule_column_loop
+    j start_destroy_capsule_row_loop
+    
+    
+row_no_loop:
+    addi $t8, $t8, 1             # j++
+    
+    j inner_loop_row_check_capsule                 # Repeat inner loop
+
+end_inner_row_check_capsule:
+    addi $t6, $t6, 1             # i++
+    j outer_loop_row_check_capsule               # Repeat outer loop
+
+end_outer_row_check_capsule:
+
+# restore all the registers that were stored on the stack
+    lw $ra, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+
+
+j virus_existence_check
+
+
+
+
+
+# End the game if all viruses have been destroyed
+virus_existence_check:
+
+lw $t0, virus_exist_1        # Load value of virus_exist_1
+    lw $t1, virus_exist_2        # Load value of virus_exist_2
+    lw $t2, virus_exist_3        # Load value of virus_exist_3
+    lw $t3, virus_exist_4        # Load value of virus_exist_4
+
+    beq $t0, 1, check_2          # If virus_exist_1 == 1, check virus_exist_2
+    j game_over              # Otherwise, branch to not_all_exist
+
+check_2:
+    beq $t1, 1, check_3          # If virus_exist_2 == 1, check virus_exist_3
+    j game_over              # Otherwise, branch to not_all_exist
+
+check_3:
+    beq $t2, 1, check_4          # If virus_exist_3 == 1, check virus_exist_4
+    j game_over              # Otherwise, branch to not_all_exist
+
+check_4:
+    beq $t3, 1, start_random_capsule        # If virus_exist_4 == 1, all viruses exist
+    j game_over             # Otherwise, branch to not_all_exist
+
+
+
+clear_column:
+
+ addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $ra, 0($sp)              # store $ra on the stack
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $t0, 0($sp)              # store $ra on the stack
+addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $t1, 0($sp)              # store $ra on the stack
+addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $t2, 0($sp)              # store $ra on the stack
+addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $t3, 0($sp)              # store $ra on the stack
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $t4, 0($sp)              # store $ra on the stack
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $t5, 0($sp)              # store $ra on the stack
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $t6, 0($sp)              # store $ra on the stack
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $t7, 0($sp)              # store $ra on the stack
+
+# load the start and end positions
+lw $t0, column_start_pos
+lw $t1, column_end_pos
+li $t2, 0x000000           # Black color 
+lw $t3, virus_position_1
+lw $t4, virus_position_2
+lw $t5, virus_position_3
+lw $t6, virus_position_4
+li $t7, 0
+
+lw $s3, virus_red
+    lw $s4, virus_blue
+    lw $s5, virus_yellow
+    
+# start from the start position, make the color black
+
+clear_column_for_loop:
+    bge $t0, $t1, clear_column_end_loop        # Exit loop if $t0 >= $t1
+    
+    sw $t2, 0($t0)
+    
+    # if the position is the position of a virus, change the virus existence value
+    beq $t0, $t3, clear_column_existence_virus_1
+    
+    beq $t0, $t4, clear_column_existence_virus_2
+    
+    beq $t0, $t5, clear_column_existence_virus_3
+    
+    beq $t0, $t6, clear_column_existence_virus_4
+    
+    j clear_column_no_existence_virus
+    
+    clear_column_existence_virus_1:
+    sw $t7, virus_exist_1
+    j clear_column_no_existence_virus
+    clear_column_existence_virus_2:
+    sw $t7, virus_exist_2
+    j clear_column_no_existence_virus
+    clear_column_existence_virus_3:
+    sw $t7, virus_exist_3
+    j clear_column_no_existence_virus
+    clear_column_existence_virus_4:
+    sw $t7, virus_exist_4
+    j clear_column_no_existence_virus
+    
+    
+    clear_column_no_existence_virus:
+
+    addi $t0, $t0, 128             # Increment loop counter ($t0++)
+    j clear_column_for_loop                   # Jump back to the start of the loop
+
+clear_column_end_loop:
+
+jal drop_capsule
+
+# restore all the registers that were stored on the stack
+lw $t7, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+    lw $t6, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+    lw $t5, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+    lw $t4, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+    lw $t3, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+    lw $t2, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+    lw $t1, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+     lw $t0, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+    lw $ra, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+    
+
+jr $ra
+
+
+
+
+clear_row:
+
+ addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $ra, 0($sp)              # store $ra on the stack
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $t0, 0($sp)              # store $ra on the stack
+addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $t1, 0($sp)              # store $ra on the stack
+addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $t2, 0($sp)              # store $ra on the stack
+addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $t3, 0($sp)              # store $ra on the stack
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $t4, 0($sp)              # store $ra on the stack
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $t5, 0($sp)              # store $ra on the stack
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $t6, 0($sp)              # store $ra on the stack
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $t7, 0($sp)              # store $ra on the stack
+        addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $t8, 0($sp)              # store $ra on the stack
+
+# load the start and end positions
+lw $t0, row_start_pos
+lw $t1, row_end_pos
+li $t2, 0x000000           # Black color 
+lw $t3, virus_position_1
+lw $t4, virus_position_2
+lw $t5, virus_position_3
+lw $t6, virus_position_4
+li $t7, 0
+
+lw $s3, virus_red
+    lw $s4, virus_blue
+    lw $s5, virus_yellow
+    
+# start from the start position, make the color black
+
+clear_row_for_loop:
+    bge $t0, $t1, clear_row_end_loop        # Exit loop if $t0 >= $t1
+    
+    sw $t2, 0($t0)
+    
+    # if the position is the position of a virus, change the virus existence value
+    beq $t0, $t3, clear_row_existence_virus_1
+    
+    beq $t0, $t4, clear_row_existence_virus_2
+    
+    beq $t0, $t5, clear_row_existence_virus_3
+    
+    beq $t0, $t6, clear_row_existence_virus_4
+    
+    j clear_row_no_existence_virus
+    
+    clear_row_existence_virus_1:
+    sw $t7, virus_exist_1
+    j clear_row_no_existence_virus
+    clear_row_existence_virus_2:
+    sw $t7, virus_exist_2
+    j clear_row_no_existence_virus
+    clear_row_existence_virus_3:
+    sw $t7, virus_exist_3
+    j clear_row_no_existence_virus
+    clear_row_existence_virus_4:
+    sw $t7, virus_exist_4
+    j clear_row_no_existence_virus
+    
+    
+    clear_row_no_existence_virus:
+
+    addi $t0, $t0, 4             # Increment loop counter ($t0++)
+    j clear_row_for_loop                   # Jump back to the start of the loop
+
+clear_row_end_loop:
+
+jal drop_capsule
+
+# restore all the registers that were stored on the stack
+lw $t8, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+lw $t7, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+    lw $t6, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+    lw $t5, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+    lw $t4, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+    lw $t3, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+    lw $t2, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+    lw $t1, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+     lw $t0, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+    lw $ra, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+    
+
+jr $ra
+
+
+
+
+# Drop all the capsules on the screen
+drop_capsule:
+
+addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $ra, 0($sp)              # store $ra on the stack
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $t0, 0($sp)              # store $ra on the stack
+addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $t1, 0($sp)              # store $ra on the stack
+addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $t2, 0($sp)              # store $ra on the stack
+addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $t3, 0($sp)              # store $ra on the stack
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $t4, 0($sp)              # store $ra on the stack
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $t5, 0($sp)              # store $ra on the stack
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $t6, 0($sp)              # store $ra on the stack
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $t7, 0($sp)              # store $ra on the stack
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $v0, 0($sp)              # store $ra on the stack
+    
+    
+start_drop_check_loop:
+li $t0, 5 #lower limit for the rows to check 
+li $t1, 30 #upper limit for the rows to check 
+li $t2, 2 #lower limit for the columns to check 
+li $t3, 19 #upper limit for the columns to check 
+
+
+# start from the bottom left, check every pixel
+outer_loop_drop_check_capsule:
+    bge $t0, $t1, end_outer_drop_check_capsule      # If i >= outer_limit, exit outer loop
+
+inner_loop_drop_check_capsule:
+    bge $t2, $t3, end_inner_drop_check_capsule      # If j >= inner_limit, exit inner loop
+    
+    # find current address, save the current address
+    mul $t4, $t2, 32         # Row offset (row * bytes_per_row)
+    add $t4, $t4, $t1          # Column offset
+    sll $t4, $t4, 2            # Multiply by 4 (bytes_per_pixel)
+    lw $t5, ADDR_DSPL          # Base display address
+    add $t4, $t4, $t5          # Full address    
+    
+    
+# if the capsule is red or blue or yellow, store the color of the capsule, go to drop function
+    lw $v0, 0($t4)
+    lw $t5, color_red
+    lw $t6, color_blue
+    lw $t7, color_yellow
+    
+    beq $v0, $t5, drop_red_capsule
+    beq $v0, $t6, drop_blue_capsule
+    beq $v0, $t7, drop_yellow_capsule
+
+    j drop_no_loop
+    
+    
+    drop_red_capsule:
+    li $t8, 0x000000           # Black color 
+    lw $v0, 128($t4)
+    beq $v0, $t8, paint_drop_red_capsule
+    
+    j drop_no_loop
+    paint_drop_red_capsule:
+    sw $t8, 0($t4)
+    sw $t5, 128($t4)
+    j start_drop_check_loop
+    
+    drop_blue_capsule:
+    li $t8, 0x000000           # Black color 
+    lw $v0, 128($t4)
+    beq $v0, $t8, paint_drop_blue_capsule
+    
+    j drop_no_loop
+    paint_drop_blue_capsule:
+    sw $t8, 0($t4)
+    sw $t6, 128($t4)
+    j start_drop_check_loop
+    
+    
+    drop_yellow_capsule:
+    li $t8, 0x000000           # Black color 
+    lw $v0, 128($t4)
+    beq $v0, $t8, paint_drop_yellow_capsule
+    
+    j drop_no_loop
+    paint_drop_yellow_capsule:
+    sw $t8, 0($t4)
+    sw $t7, 128($t4)
+    j start_drop_check_loop
+    
+    
+    
+drop_no_loop:
+    subi $t1, $t1, 1             # j--
+    
+    j inner_loop_drop_check_capsule                 # Repeat inner loop
+
+end_inner_drop_check_capsule:
+    addi $t2, $t2, 1             # i++
+    j outer_loop_drop_check_capsule               # Repeat outer loop
+
+end_outer_drop_check_capsule:
+
+# restore all the registers that were stored on the stack
+lw $v0, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+lw $t7, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+    lw $t6, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+    lw $t5, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+    lw $t4, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+    lw $t3, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+    lw $t2, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+    lw $t1, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+     lw $t0, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+    lw $ra, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+    
+
+
+jr $ra
 
 
 
@@ -874,6 +1561,8 @@ frame_delay_loop:
     subi $t0, $t0, 1
     bnez $t0, frame_delay_loop
     jr $ra
+    
+game_over:
 # Quit Game Subroutine
 quit_game:
     li $v0, 10              # Exit syscall
