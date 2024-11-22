@@ -55,6 +55,8 @@ column_end_pos: .word 0 # the ending position of capsules in a column
 row_start_pos: .word 0 # the starting position of capsules in a row
 row_end_pos: .word 0 # the ending position of capsules in a row
 count_consecutive: .word 1 # the number of consecutive capsules
+gravity_timer: .word 0
+gravity_threshold: .word 240    # Threshold for triggering gravity
 ##############################################################################
 # Mutable Data
 ##############################################################################
@@ -444,7 +446,15 @@ jr $ra
 game_loop:
 
     jal erase_capsule
-    jal check_input            # Handle key presses
+    jal check_input            # Handle key presses              
+    # Increment gravity timer
+    lw $t2, gravity_timer       # Load gravity_timer
+    addi $t2, $t2, 1            # Increment timer by 1
+    sw $t2, gravity_timer       # Store updated timer
+
+    # Check if timer reaches threshold
+    lw $t3, gravity_threshold   # Load gravity threshold
+    bge $t2, $t3, trigger_gravity # If timer >= threshold, trigger gravity
     jal draw_capsule
     jal check_collision
     jal frame_delay            # Delay for 60 FPS
@@ -452,6 +462,7 @@ game_loop:
     
 
 # The game loop ends here -----------------------------------------------------------------------------------
+
     
     erase_capsule:
     lw $t0, capsule_x          # Load current X position
@@ -791,7 +802,15 @@ horizontal_down:
     addi $t1, $t1, 1           # Increase Y position
     sw $t1, capsule_y          # Update position
 
-    
+# Trigger Gravity
+trigger_gravity:
+    li $t2, 0                   # Reset gravity_timer
+    sw $t2, gravity_timer       # Store updated timer
+
+    # Call move_down subroutine
+    jal move_down               # Move the capsule down
+
+    j game_loop                 # Return to game loop
 # Check Pixel Subroutine
 check_pixel:
     mul $t0, $a1, 32       # Y * row increment (128 bytes per row)
@@ -1575,4 +1594,3 @@ quit_game:
 
     # 5. Go back to Step 1
     j game_loop
-
