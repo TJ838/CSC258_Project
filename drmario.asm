@@ -61,11 +61,14 @@ global_timer:  .word 0     # Tracks the passage of time (global loop counter)
 gravity_timer: .word 0
 gravity_threshold: .word 240    # Threshold for triggering gravity
 min_gravity:       .word 10	 # Minimum threshold (fastest speed)
+
+is_paused:        .word 0       # 0 = game running, 1 = game paused
+paused_message:   .asciiz "Paused" # Message to display during pause
 ##############################################################################
 # Mutable Data
 ##############################################################################
 
-##############################################################################
+###########0###################################################################
 # Code
 ##############################################################################
 	.text
@@ -448,7 +451,10 @@ jr $ra
 
 
 game_loop:
-
+    # Check if game is paused
+    lw $t0, is_paused            # Load pause state
+    bnez $t0, pause_handler      # If paused, handle pause logic
+    
     jal erase_capsule
     jal check_input            # Handle key presses   
     # Increment global timer
@@ -541,6 +547,10 @@ erase_vertical_capsule:
     # Quit game (Q key)
     li $t2, 0x71            # ASCII for 'q'
     beq $a1, $t2, quit_game
+    
+    # Pause game (P key)
+    li $t2, 0x70
+    beq $a1, $t2, toggle_pause
     
     no_key:
     jr $ra                  # Return if no key matched
@@ -845,6 +855,30 @@ adjust_gravity_speed:
 update_threshold:
     sw $t3, gravity_threshold   # Update gravity threshold
     jr $ra                      # Return to game loop
+
+
+toggle_pause:
+    lw $t0, is_paused        # Load current pause state
+    xori $t0, $t0, 1         # Toggle pause state (0 <-> 1)
+    sw $t0, is_paused        # Store updated state
+
+    # If now paused, display "Paused" message
+    li $t1, 1                # Check if game is paused
+    beq $t0, $t1, display_pause_message
+
+    # If now resumed, clear screen or continue
+    jr $ra                   # Return to game loop
+
+display_pause_message:
+    la $a0, paused_message   # Load "Paused" message
+    li $v0, 4                # Syscall for print string
+    syscall
+    jr $ra                   # Return to game loop
+pause_handler:
+    # Wait for 'p' key to resume
+    jal check_input          # Handle input
+    j game_loop              # Stay in pause handler until resumed
+
 
 # Check Pixel Subroutine
 check_pixel:
@@ -1629,3 +1663,4 @@ quit_game:
 
     # 5. Go back to Step 1
     j game_loop
+
