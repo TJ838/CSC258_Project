@@ -64,11 +64,12 @@ min_gravity:       .word 10	 # Minimum threshold (fastest speed)
 
 is_paused:        .word 0       # 0 = game running, 1 = game paused
 paused_message:   .asciiz "Paused" # Message to display during pause
+
 ##############################################################################
 # Mutable Data
 ##############################################################################
 
-###########0###################################################################
+##############################################################################
 # Code
 ##############################################################################
 	.text
@@ -473,11 +474,11 @@ game_loop:
     # Check for gravity speed adjustment (over time)
     lw $t0, global_timer
     li $t4, 100                 # Time interval for adjusting gravity
-    rem $t5, $t0, $t4           # Check if global_timer is divisible by 100
+    div $t0, $t4                 # Check if global_timer is divisible by 100
+    mfhi $t5                     # Move the remainder (HI) to $t5           
     bnez $t5, skip_adjustment   # If not divisible, skip adjustment
 
     jal adjust_gravity_speed    # Adjust gravity speed
-    
     jal draw_capsule
     jal check_collision
     jal frame_delay            # Delay for 60 FPS
@@ -485,7 +486,6 @@ game_loop:
     
 
 # The game loop ends here -----------------------------------------------------------------------------------
-
     
     erase_capsule:
     lw $t0, capsule_x          # Load current X position
@@ -828,6 +828,7 @@ horizontal_down:
     # Move down
     addi $t1, $t1, 1           # Increase Y position
     sw $t1, capsule_y          # Update position
+    
 
 skip_adjustment:
     jal draw_capsule            # Draw capsule at the current position
@@ -878,8 +879,9 @@ pause_handler:
     # Wait for 'p' key to resume
     jal check_input          # Handle input
     j game_loop              # Stay in pause handler until resumed
-
-
+    
+    
+    
 # Check Pixel Subroutine
 check_pixel:
     mul $t0, $a1, 32       # Y * row increment (128 bytes per row)
@@ -989,6 +991,22 @@ destroy_capsules_column:
 
  addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
     sw $ra, 0($sp)              # store $ra on the stack
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $t0, 0($sp)              # store $ra on the stack
+addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $t1, 0($sp)              # store $ra on the stack
+addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $t2, 0($sp)              # store $ra on the stack
+addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $t3, 0($sp)              # store $ra on the stack
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $t4, 0($sp)              # store $ra on the stack
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $t5, 0($sp)              # store $ra on the stack
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $t6, 0($sp)              # store $ra on the stack
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $t7, 0($sp)              # store $ra on the stack
     
     
 start_destroy_capsule_column_loop:
@@ -1000,13 +1018,14 @@ li $t9, 19 #upper limit for the columns to check
 
 outer_loop_column_check_capsule:
     bge $t8, $t9, end_outer_column_check_capsule      # If i >= outer_limit, exit outer loop
+    li $t6, 5 #lower limit for the rows to check 
 
 inner_loop_column_check_capsule:
     bge $t6, $t7, end_inner_column_check_capsule      # If j >= inner_limit, exit inner loop
     
     # find current address, save the current address
-    mul $t3, $t8, 32         # Row offset (row * bytes_per_row)
-    add $t3, $t3, $t6          # Column offset
+    mul $t3, $t6, 32         # Row offset (row * bytes_per_row)
+    add $t3, $t3, $t8          # Column offset
     sll $t3, $t3, 2            # Multiply by 4 (bytes_per_pixel)
     lw $t4, ADDR_DSPL          # Base display address
     add $t3, $t3, $t4          # Full address    
@@ -1073,8 +1092,8 @@ inner_loop_column_check_capsule:
     
     lw $v0, 0($t3)
     
-    beq $v0, $s1, column_yellow_loop_continue
-    beq $v0, $s4, column_yellow_loop_continue
+    beq $v0, $s2, column_yellow_loop_continue
+    beq $v0, $s5, column_yellow_loop_continue
     j column_consecutive_end
     
     column_yellow_loop_continue:
@@ -1118,8 +1137,25 @@ end_inner_column_check_capsule:
 end_outer_column_check_capsule:
 
 # restore all the registers that were stored on the stack
+lw $t7, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+    lw $t6, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+    lw $t5, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+    lw $t4, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+    lw $t3, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+    lw $t2, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+    lw $t1, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+     lw $t0, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
     lw $ra, 0($sp)              # restore $ra from the stack
     addi $sp, $sp, 4            # move the stack pointer to the new top element
+    
 
 j destroy_capsules_row
 
@@ -1135,6 +1171,22 @@ destroy_capsules_row:
 
  addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
     sw $ra, 0($sp)              # store $ra on the stack
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $t0, 0($sp)              # store $ra on the stack
+addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $t1, 0($sp)              # store $ra on the stack
+addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $t2, 0($sp)              # store $ra on the stack
+addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $t3, 0($sp)              # store $ra on the stack
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $t4, 0($sp)              # store $ra on the stack
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $t5, 0($sp)              # store $ra on the stack
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $t6, 0($sp)              # store $ra on the stack
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $t7, 0($sp)              # store $ra on the stack
     
     
 start_destroy_capsule_row_loop:
@@ -1146,13 +1198,13 @@ li $t9, 19 #upper limit for the columns to check
 
 outer_loop_row_check_capsule:
     bge $t6, $t7, end_outer_row_check_capsule      # If i >= outer_limit, exit outer loop
-
+    li $t8, 2 #lower limit for the columns to check
 inner_loop_row_check_capsule:
     bge $t8, $t9, end_inner_row_check_capsule      # If j >= inner_limit, exit inner loop
     
     # find current address, save the current address
-    mul $t3, $t8, 32         # Row offset (row * bytes_per_row)
-    add $t3, $t3, $t6          # Column offset
+    mul $t3, $t6, 32         # Row offset (row * bytes_per_row)
+    add $t3, $t3, $t8          # Column offset
     sll $t3, $t3, 2            # Multiply by 4 (bytes_per_pixel)
     lw $t4, ADDR_DSPL          # Base display address
     add $t3, $t3, $t4          # Full address    
@@ -1219,8 +1271,8 @@ inner_loop_row_check_capsule:
     
     lw $v0, 0($t3)
     
-    beq $v0, $s1, row_yellow_loop_continue
-    beq $v0, $s4, row_yellow_loop_continue
+    beq $v0, $s2, row_yellow_loop_continue
+    beq $v0, $s5, row_yellow_loop_continue
     j row_consecutive_end
     
     row_yellow_loop_continue:
@@ -1264,8 +1316,25 @@ end_inner_row_check_capsule:
 end_outer_row_check_capsule:
 
 # restore all the registers that were stored on the stack
+lw $t7, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+    lw $t6, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+    lw $t5, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+    lw $t4, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+    lw $t3, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+    lw $t2, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+    lw $t1, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+     lw $t0, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
     lw $ra, 0($sp)              # restore $ra from the stack
     addi $sp, $sp, 4            # move the stack pointer to the new top element
+    
 
 
 j virus_existence_check
@@ -1282,18 +1351,15 @@ lw $t0, virus_exist_1        # Load value of virus_exist_1
     lw $t2, virus_exist_3        # Load value of virus_exist_3
     lw $t3, virus_exist_4        # Load value of virus_exist_4
 
-    beq $t0, 1, check_2          # If virus_exist_1 == 1, check virus_exist_2
-    j game_over              # Otherwise, branch to not_all_exist
+    beq $t0, 1, start_random_capsule          # If virus_exist_1 == 1, check virus_exist_2
 
-check_2:
-    beq $t1, 1, check_3          # If virus_exist_2 == 1, check virus_exist_3
-    j game_over              # Otherwise, branch to not_all_exist
 
-check_3:
-    beq $t2, 1, check_4          # If virus_exist_3 == 1, check virus_exist_4
-    j game_over              # Otherwise, branch to not_all_exist
+    beq $t1, 1, start_random_capsule          # If virus_exist_2 == 1, check virus_exist_3
 
-check_4:
+
+    beq $t2, 1, start_random_capsule          # If virus_exist_3 == 1, check virus_exist_4
+
+
     beq $t3, 1, start_random_capsule        # If virus_exist_4 == 1, all viruses exist
     j game_over             # Otherwise, branch to not_all_exist
 
@@ -1541,14 +1607,14 @@ li $t3, 19 #upper limit for the columns to check
 
 # start from the bottom left, check every pixel
 outer_loop_drop_check_capsule:
-    bge $t0, $t1, end_outer_drop_check_capsule      # If i >= outer_limit, exit outer loop
-
+    bge $t2, $t3, end_outer_drop_check_capsule      # If i >= outer_limit, exit outer loop
+    li $t1, 30 #upper limit for the rows to check 
 inner_loop_drop_check_capsule:
-    bge $t2, $t3, end_inner_drop_check_capsule      # If j >= inner_limit, exit inner loop
+    bge $t0, $t1, end_inner_drop_check_capsule      # If j >= inner_limit, exit inner loop
     
     # find current address, save the current address
-    mul $t4, $t2, 32         # Row offset (row * bytes_per_row)
-    add $t4, $t4, $t1          # Column offset
+    mul $t4, $t1, 32         # Row offset (row * bytes_per_row)
+    add $t4, $t4, $t2          # Column offset
     sll $t4, $t4, 2            # Multiply by 4 (bytes_per_pixel)
     lw $t5, ADDR_DSPL          # Base display address
     add $t4, $t4, $t5          # Full address    
