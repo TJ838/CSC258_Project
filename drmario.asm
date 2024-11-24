@@ -455,13 +455,17 @@ game_loop:
     # Check if game is paused
     lw $t0, is_paused            # Load pause state
     bnez $t0, pause_handler      # If paused, handle pause logic
-    
+
     jal erase_capsule
     jal check_input            # Handle key presses   
+    
+    jal play_theme_music
+    
     # Increment global timer
     lw $t0, global_timer
     addi $t0, $t0, 1
-    sw $t0, global_timer           
+    sw $t0, global_timer   
+    
     # Increment gravity timer
     lw $t2, gravity_timer       # Load gravity_timer
     addi $t2, $t2, 1            # Increment timer by 1
@@ -486,6 +490,642 @@ game_loop:
     
 
 # The game loop ends here -----------------------------------------------------------------------------------
+
+play_theme_music:
+    
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $ra, 0($sp)              # store $ra on the stack
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $t0, 0($sp)              # store $ra on the stack
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $t1, 0($sp)              # store $ra on the stack
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $t2, 0($sp)              # store $ra on the stack
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $a0, 0($sp)              # store $ra on the stack
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $a1, 0($sp)              # store $ra on the stack
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $a2, 0($sp)              # store $ra on the stack
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $a3, 0($sp)              # store $ra on the stack
+    
+    
+    lw $t0, global_timer
+    #li $t1, 2
+    #mul $t0, $t0, $t1
+    li $t1, 1920
+    div $t0, $t1                 # Check if global_timer is divisible by 64
+    mfhi $t2                     # Move the remainder (HI) to $t2 
+    
+    beq $t2, 0, play_theme_note_1
+    beq $t2, 60, play_theme_note_2
+    beq $t2, 120, play_theme_note_3
+    beq $t2, 180, play_theme_note_4
+    beq $t2, 240, play_theme_note_5
+    beq $t2, 300, play_theme_note_6
+    beq $t2, 360, play_theme_note_7
+    beq $t2, 420, play_theme_note_8
+    beq $t2, 480, play_theme_note_9
+    beq $t2, 540, play_theme_note_10
+    beq $t2, 600, play_theme_note_11
+    beq $t2, 660, play_theme_note_12
+    beq $t2, 720, play_theme_note_13
+    beq $t2, 960, play_theme_note_14
+    beq $t2, 1020, play_theme_note_15
+    beq $t2, 1080, play_theme_note_16
+    beq $t2, 1140, play_theme_note_17
+    beq $t2, 1200, play_theme_note_18
+    beq $t2, 1260, play_theme_note_19
+    beq $t2, 1320, play_theme_note_20
+    beq $t2, 1380, play_theme_note_21
+    beq $t2, 1440, play_theme_note_22
+    beq $t2, 1470, play_theme_note_23
+    beq $t2, 1500, play_theme_note_24
+    beq $t2, 1560, play_theme_note_25
+    beq $t2, 1590, play_theme_note_26
+    beq $t2, 1620, play_theme_note_27
+    beq $t2, 1680, play_theme_note_28
+    beq $t2, 1710, play_theme_note_29
+    beq $t2, 1740, play_theme_note_30
+    beq $t2, 1800, play_theme_note_31
+    beq $t2, 1830, play_theme_note_32
+    beq $t2, 1860, play_theme_note_33
+
+
+
+
+    
+    j finish_one_loop_theme_music
+    
+    
+    play_theme_note_1:
+    li $v0, 31
+    li $a0, 70   # Bb pitch
+    li $a1, 100  # duration
+    li $a2, 1    # instrument
+    li $a3, 30   # volume
+    syscall
+    j finish_one_loop_theme_music
+
+play_theme_note_2:
+    li $v0, 31
+    li $a0, 71   # B pitch
+    li $a1, 100  # duration
+    li $a2, 1    # instrument
+    li $a3, 30   # volume
+    syscall
+    j finish_one_loop_theme_music
+
+play_theme_note_3:
+    li $v0, 31
+    li $a0, 70   # Bb pitch
+    li $a1, 100  # duration
+    li $a2, 1    # instrument
+    li $a3, 30   # volume
+    syscall
+    j finish_one_loop_theme_music
+
+play_theme_note_4:
+    li $v0, 31
+    li $a0, 71   # B pitch
+    li $a1, 100  # duration
+    li $a2, 1    # instrument
+    li $a3, 30   # volume
+    syscall
+    j finish_one_loop_theme_music
+
+play_theme_note_5:
+    li $v0, 31
+    li $a0, 69   # A pitch
+    li $a1, 100  # duration
+    li $a2, 1    # instrument
+    li $a3, 30   # volume
+    syscall
+    j finish_one_loop_theme_music
+
+play_theme_note_6:
+    li $v0, 31
+    li $a0, 55   # G- pitch
+    li $a1, 100  # duration
+    li $a2, 1    # instrument
+    li $a3, 30   # volume
+    syscall
+    j finish_one_loop_theme_music
+
+play_theme_note_7:
+    li $v0, 31
+    li $a0, 55   # G- pitch
+    li $a1, 100  # duration
+    li $a2, 1    # instrument
+    li $a3, 30   # volume
+    syscall
+    j finish_one_loop_theme_music
+
+play_theme_note_8:
+    li $v0, 31
+    li $a0, 69   # A pitch
+    li $a1, 100  # duration
+    li $a2, 1    # instrument
+    li $a3, 30   # volume
+    syscall
+    j finish_one_loop_theme_music
+
+play_theme_note_9:
+    li $v0, 31
+    li $a0, 70   # Bb pitch
+    li $a1, 100  # duration
+    li $a2, 1    # instrument
+    li $a3, 30   # volume
+    syscall
+    j finish_one_loop_theme_music
+
+play_theme_note_10:
+    li $v0, 31
+    li $a0, 71   # B pitch
+    li $a1, 100  # duration
+    li $a2, 1    # instrument
+    li $a3, 30   # volume
+    syscall
+    j finish_one_loop_theme_music
+
+play_theme_note_11:
+    li $v0, 31
+    li $a0, 69   # A pitch
+    li $a1, 100  # duration
+    li $a2, 1    # instrument
+    li $a3, 30   # volume
+    syscall
+    j finish_one_loop_theme_music
+
+play_theme_note_12:
+    li $v0, 31
+    li $a0, 55   # G- pitch
+    li $a1, 100  # duration
+    li $a2, 1    # instrument
+    li $a3, 30   # volume
+    syscall
+    j finish_one_loop_theme_music
+
+play_theme_note_13:
+    li $v0, 31
+    li $a0, 55   # G- pitch
+    li $a1, 100  # duration
+    li $a2, 1    # instrument
+    li $a3, 30   # volume
+    syscall
+    j finish_one_loop_theme_music
+
+play_theme_note_14:
+    li $v0, 31
+    li $a0, 70   # Bb pitch
+    li $a1, 100  # duration
+    li $a2, 1    # instrument
+    li $a3, 30   # volume
+    syscall
+    j finish_one_loop_theme_music
+
+play_theme_note_15:
+    li $v0, 31
+    li $a0, 71   # B pitch
+    li $a1, 100  # duration
+    li $a2, 1    # instrument
+    li $a3, 30   # volume
+    syscall
+    j finish_one_loop_theme_music
+
+play_theme_note_16:
+    li $v0, 31
+    li $a0, 70   # Bb pitch
+    li $a1, 100  # duration
+    li $a2, 1    # instrument
+    li $a3, 30   # volume
+    syscall
+    j finish_one_loop_theme_music
+
+play_theme_note_17:
+    li $v0, 31
+    li $a0, 71   # B pitch
+    li $a1, 100  # duration
+    li $a2, 1    # instrument
+    li $a3, 30   # volume
+    syscall
+    j finish_one_loop_theme_music
+
+play_theme_note_18:
+    li $v0, 31
+    li $a0, 69   # A pitch
+    li $a1, 100  # duration
+    li $a2, 1    # instrument
+    li $a3, 30   # volume
+    syscall
+    j finish_one_loop_theme_music
+
+play_theme_note_19:
+    li $v0, 31
+    li $a0, 55   # G- pitch
+    li $a1, 100  # duration
+    li $a2, 1    # instrument
+    li $a3, 30   # volume
+    syscall
+    j finish_one_loop_theme_music
+
+play_theme_note_20:
+    li $v0, 31
+    li $a0, 55   # G- pitch
+    li $a1, 100  # duration
+    li $a2, 1    # instrument
+    li $a3, 30   # volume
+    syscall
+    j finish_one_loop_theme_music
+
+play_theme_note_21:
+    li $v0, 31
+    li $a0, 69   # D pitch
+    li $a1, 100  # duration
+    li $a2, 1    # instrument
+    li $a3, 30   # volume
+    syscall
+    j finish_one_loop_theme_music
+
+play_theme_note_22:
+    li $v0, 31
+    li $a0, 47   # E pitch
+    li $a1, 100  # duration
+    li $a2, 1    # instrument
+    li $a3, 30   # volume
+    syscall
+    j finish_one_loop_theme_music
+
+play_theme_note_23:
+    li $v0, 31
+    li $a0, 47   # F pitch
+    li $a1, 100  # duration
+    li $a2, 1    # instrument
+    li $a3, 30   # volume
+    syscall
+    j finish_one_loop_theme_music
+
+play_theme_note_24:
+    li $v0, 31
+    li $a0, 47   # D pitch
+    li $a1, 100  # duration
+    li $a2, 1    # instrument
+    li $a3, 30   # volume
+    syscall
+    j finish_one_loop_theme_music
+
+play_theme_note_25:
+    li $v0, 31
+    li $a0, 48   # E pitch
+    li $a1, 100  # duration
+    li $a2, 1    # instrument
+    li $a3, 30   # volume
+    syscall
+    j finish_one_loop_theme_music
+
+play_theme_note_26:
+    li $v0, 31
+    li $a0, 48   # F pitch
+    li $a1, 100  # duration
+    li $a2, 1    # instrument
+    li $a3, 30   # volume
+    syscall
+    j finish_one_loop_theme_music
+
+play_theme_note_27:
+    li $v0, 31
+    li $a0, 48   # Bb pitch
+    li $a1, 100  # duration
+    li $a2, 1    # instrument
+    li $a3, 30   # volume
+    syscall
+    j finish_one_loop_theme_music
+
+play_theme_note_28:
+    li $v0, 31
+    li $a0, 49   # B pitch
+    li $a1, 100  # duration
+    li $a2, 1    # instrument
+    li $a3, 30   # volume
+    syscall
+    j finish_one_loop_theme_music
+
+play_theme_note_29:
+    li $v0, 31
+    li $a0, 49   # A pitch
+    li $a1, 100  # duration
+    li $a2, 1    # instrument
+    li $a3, 30   # volume
+    syscall
+    j finish_one_loop_theme_music
+
+play_theme_note_30:
+    li $v0, 31
+    li $a0, 49   # G- pitch
+    li $a1, 100  # duration
+    li $a2, 1    # instrument
+    li $a3, 30   # volume
+    syscall
+    j finish_one_loop_theme_music
+
+play_theme_note_31:
+    li $v0, 31
+    li $a0, 50   # G- pitch
+    li $a1, 100  # duration
+    li $a2, 1    # instrument
+    li $a3, 30   # volume
+    syscall
+    j finish_one_loop_theme_music
+
+play_theme_note_32:
+    li $v0, 31
+    li $a0, 50   # A pitch
+    li $a1, 100  # duration
+    li $a2, 1    # instrument
+    li $a3, 30   # volume
+    syscall
+    j finish_one_loop_theme_music
+
+play_theme_note_33:
+    li $v0, 31
+    li $a0, 50   # Bb pitch
+    li $a1, 100  # duration
+    li $a2, 1    # instrument
+    li $a3, 30   # volume
+    syscall
+    j finish_one_loop_theme_music
+
+
+    
+    
+    finish_one_loop_theme_music:
+    
+    # restore all the registers that were stored on the stack
+    lw $a3, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+    lw $a2, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+    lw $a1, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+     lw $a0, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+    lw $t2, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+    lw $t1, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+    lw $t0, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+    lw $ra, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+    
+    jr $ra
+
+
+
+
+    play_move_sound:
+    
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $ra, 0($sp)              # store $ra on the stack
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $a0, 0($sp)              # store $ra on the stack
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $a1, 0($sp)              # store $ra on the stack
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $a2, 0($sp)              # store $ra on the stack
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $a3, 0($sp)              # store $ra on the stack
+    
+    li $v0, 31
+    li $a0, 70 # pitch
+    li $a1, 100 # duration
+    li $a2, 87 # instrument
+    li $a3, 30 # volume
+    syscall
+    
+    # restore all the registers that were stored on the stack
+    lw $a3, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+    lw $a2, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+    lw $a1, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+     lw $a0, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+    lw $ra, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+    
+    jr $ra
+    
+    
+    play_move_fail_sound:
+    
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $ra, 0($sp)              # store $ra on the stack
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $a0, 0($sp)              # store $ra on the stack
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $a1, 0($sp)              # store $ra on the stack
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $a2, 0($sp)              # store $ra on the stack
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $a3, 0($sp)              # store $ra on the stack
+    
+    li $v0, 31
+    li $a0, 50 # pitch
+    li $a1, 100 # duration
+    li $a2, 87 # instrument
+    li $a3, 30 # volume
+    syscall
+    
+    # restore all the registers that were stored on the stack
+    lw $a3, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+    lw $a2, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+    lw $a1, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+     lw $a0, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+    lw $ra, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+    
+    jr $ra
+    
+    
+    play_drop_capsule_sound:
+    
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $ra, 0($sp)              # store $ra on the stack
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $a0, 0($sp)              # store $ra on the stack
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $a1, 0($sp)              # store $ra on the stack
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $a2, 0($sp)              # store $ra on the stack
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $a3, 0($sp)              # store $ra on the stack
+    
+    li $v0, 31
+    li $a0, 80 # pitch
+    li $a1, 100 # duration
+    li $a2, 87 # instrument
+    li $a3, 30 # volume
+    syscall
+    
+    # restore all the registers that were stored on the stack
+    lw $a3, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+    lw $a2, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+    lw $a1, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+     lw $a0, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+    lw $ra, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+    
+    jr $ra
+    
+    
+     play_remove_capsule_sound:
+    
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $ra, 0($sp)              # store $ra on the stack
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $a0, 0($sp)              # store $ra on the stack
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $a1, 0($sp)              # store $ra on the stack
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $a2, 0($sp)              # store $ra on the stack
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $a3, 0($sp)              # store $ra on the stack
+    
+    li $v0, 31
+    li $a0, 100 # pitch
+    li $a1, 100 # duration
+    li $a2, 87 # instrument
+    li $a3, 30 # volume
+    syscall
+    
+    # restore all the registers that were stored on the stack
+    lw $a3, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+    lw $a2, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+    lw $a1, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+     lw $a0, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+    lw $ra, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+    
+    jr $ra
+    
+    
+    
+    play_game_over_fail_sound:
+    
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $ra, 0($sp)              # store $ra on the stack
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $a0, 0($sp)              # store $ra on the stack
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $a1, 0($sp)              # store $ra on the stack
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $a2, 0($sp)              # store $ra on the stack
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $a3, 0($sp)              # store $ra on the stack
+    
+    li $v0, 31
+    li $a0, 60 # pitch
+    li $a1, 100 # duration
+    li $a2, 87 # instrument
+    li $a3, 30 # volume
+    syscall
+    
+    li $v0, 31
+    li $a0, 55 # pitch
+    li $a1, 100 # duration
+    li $a2, 87 # instrument
+    li $a3, 30 # volume
+    syscall
+    
+    li $v0, 31
+    li $a0, 50 # pitch
+    li $a1, 100 # duration
+    li $a2, 87 # instrument
+    li $a3, 30 # volume
+    syscall
+    
+    # restore all the registers that were stored on the stack
+    lw $a3, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+    lw $a2, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+    lw $a1, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+     lw $a0, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+    lw $ra, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+    
+    jr $ra
+    
+    
+    
+    play_game_over_success_sound:
+    
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $ra, 0($sp)              # store $ra on the stack
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $a0, 0($sp)              # store $ra on the stack
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $a1, 0($sp)              # store $ra on the stack
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $a2, 0($sp)              # store $ra on the stack
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $a3, 0($sp)              # store $ra on the stack
+    
+    li $v0, 31
+    li $a0, 90 # pitch
+    li $a1, 100 # duration
+    li $a2, 87 # instrument
+    li $a3, 30 # volume
+    syscall
+    
+    li $v0, 31
+    li $a0, 95 # pitch
+    li $a1, 100 # duration
+    li $a2, 87 # instrument
+    li $a3, 30 # volume
+    syscall
+    
+    li $v0, 31
+    li $a0, 100 # pitch
+    li $a1, 100 # duration
+    li $a2, 87 # instrument
+    li $a3, 30 # volume
+    syscall
+    
+    # restore all the registers that were stored on the stack
+    lw $a3, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+    lw $a2, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+    lw $a1, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+     lw $a0, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+    lw $ra, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+    
+    jr $ra
+    
+    
+    
+    
     
     erase_capsule:
     lw $t0, capsule_x          # Load current X position
@@ -605,6 +1245,12 @@ rotate_capsule:
     sw $t1, capsule_top_color
     sw $t0, capsule_bottom_color
     
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $ra, 0($sp)              # store $ra on the stack
+    jal play_move_sound
+    lw $ra, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+    
     jr $ra
 
 rotate_to_horizontal:
@@ -628,9 +1274,22 @@ rotate_to_horizontal:
     # Rotate to longitudinal
     li $t2, 1                      # Update to longitudinal
     sw $t2, capsule_orientation
+    
+    
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $ra, 0($sp)              # store $ra on the stack
+    jal play_move_sound
+    lw $ra, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+    
     jr $ra
 
 no_rotate:
+addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $ra, 0($sp)              # store $ra on the stack
+    jal play_move_fail_sound
+    lw $ra, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
     jr $ra
 
 move_left:
@@ -674,6 +1333,13 @@ move_left:
     # Move left
     subi $t0, $t0, 1           # Decrease X position
     sw $t0, capsule_x          # Update position
+    
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $ra, 0($sp)              # store $ra on the stack
+    jal play_move_sound
+    lw $ra, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+    
     jr $ra
 
 horizontal_left:
@@ -695,9 +1361,21 @@ horizontal_left:
     # Move left
     subi $t0, $t0, 1           # Decrease X position
     sw $t0, capsule_x          # Update position
+    
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $ra, 0($sp)              # store $ra on the stack
+    jal play_move_sound
+    lw $ra, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+    
     jr $ra
 
 no_movge:
+addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $ra, 0($sp)              # store $ra on the stack
+    jal play_move_fail_sound
+    lw $ra, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
     jr $ra
     
 move_right:
@@ -740,6 +1418,13 @@ move_right:
     # Move right
     addi $t0, $t0, 1           # Increase X position
     sw $t0, capsule_x          # Update position
+    
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $ra, 0($sp)              # store $ra on the stack
+    jal play_move_sound
+    lw $ra, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+    
     jr $ra
 
 horizontal_right:
@@ -761,9 +1446,21 @@ horizontal_right:
     # Move right
     addi $t0, $t0, 1           # Increase X position
     sw $t0, capsule_x          # Update position
+    
+    addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $ra, 0($sp)              # store $ra on the stack
+    jal play_move_sound
+    lw $ra, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+    
     jr $ra
 
 no_move:
+addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $ra, 0($sp)              # store $ra on the stack
+    jal play_move_fail_sound
+    lw $ra, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
     jr $ra
     
 move_down:
@@ -792,6 +1489,7 @@ move_down:
     # Move down
     addi $t1, $t1, 1           # Increase Y position
     sw $t1, capsule_y          # Update position
+    
     jr $ra
 
 horizontal_down:
@@ -828,6 +1526,7 @@ horizontal_down:
     # Move down
     addi $t1, $t1, 1           # Increase Y position
     sw $t1, capsule_y          # Update position
+    
     
 
 skip_adjustment:
@@ -988,6 +1687,11 @@ horizontal_collision_check:
 # Destroy any capsules that appear in a column
 destroy_capsules_column:
 
+addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $ra, 0($sp)              # store $ra on the stack
+    jal play_drop_capsule_sound
+    lw $ra, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
 
  addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
     sw $ra, 0($sp)              # store $ra on the stack
@@ -1361,11 +2065,19 @@ lw $t0, virus_exist_1        # Load value of virus_exist_1
 
 
     beq $t3, 1, start_random_capsule        # If virus_exist_4 == 1, all viruses exist
+    
+    
     j game_over             # Otherwise, branch to not_all_exist
 
 
 
 clear_column:
+
+addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $ra, 0($sp)              # store $ra on the stack
+    jal play_remove_capsule_sound
+    lw $ra, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
 
  addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
     sw $ra, 0($sp)              # store $ra on the stack
@@ -1469,6 +2181,12 @@ jr $ra
 
 clear_row:
 
+addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $ra, 0($sp)              # store $ra on the stack
+    jal play_remove_capsule_sound
+    lw $ra, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+    
  addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
     sw $ra, 0($sp)              # store $ra on the stack
     addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
@@ -1715,9 +2433,24 @@ frame_delay_loop:
     subi $t0, $t0, 1
     bnez $t0, frame_delay_loop
     jr $ra
-    
+
+game_over_success:
+addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $ra, 0($sp)              # store $ra on the stack
+    jal play_game_over_success_sound
+    lw $ra, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+j quit_game
+
 game_over:
 # Quit Game Subroutine
+
+addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+    sw $ra, 0($sp)              # store $ra on the stack
+    jal play_game_over_fail_sound
+    lw $ra, 0($sp)              # restore $ra from the stack
+    addi $sp, $sp, 4            # move the stack pointer to the new top element
+    
 quit_game:
     li $v0, 10              # Exit syscall
     syscall
