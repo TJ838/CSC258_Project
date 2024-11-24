@@ -59,8 +59,8 @@ count_consecutive: .word 1 # the number of consecutive capsules
 #gravity variables
 global_timer:  .word 0     # Tracks the passage of time (global loop counter)
 gravity_timer: .word 0
-gravity_threshold: .word 240    # Threshold for triggering gravity
-min_gravity:       .word 30	 # Minimum threshold (fastest speed)
+gravity_threshold: .word 900    # Threshold for triggering gravity
+min_gravity:       .word 240	 # Minimum threshold (fastest speed)
 
 is_paused:        .word 0       # 0 = game running, 1 = game paused
 paused_message:   .asciiz "Paused" # Message to display during pause
@@ -1157,7 +1157,6 @@ erase_vertical_capsule:
     addi $t3, $t3, 128         # Move down
     sw $t5, 0($t3)
     jr $ra
-
     # 1a. Check if key has been pressed
     check_input:
     lw $t1, ADDR_KBRD       # Load keyboard input (address of keyboard)
@@ -1564,16 +1563,16 @@ toggle_pause:
 
     # If now paused, display "Paused" message
     li $t1, 1                # Check if game is paused
-    beq $t0, $t1, display_pause_message
+    beq $t0, $t1, draw_pause_logo
 
     # If now resumed, clear screen or continue
-    jr $ra                   # Return to game loop
+    jal clear_pause_logo
+    j game_loop
+   
 
-display_pause_message:
-    la $a0, paused_message   # Load "Paused" message
-    li $v0, 4                # Syscall for print string
-    syscall
-    jr $ra                   # Return to game loop
+draw_logo:
+    jal draw_pause_logo         # Draw the pause logo   
+         
 pause_handler:
     # Wait for 'p' key to resume
     jal check_input          # Handle input
@@ -1612,7 +1611,6 @@ pause_handler:
 end_draw_logo:
     jr $ra
 clear_pause_logo:
-    # Set white color for the logo
     li $t4, 0x000000          # $t4 = blaxk
     # Start drawing the first vertical bar
     lw $t0, ADDR_DSPL         # Load base address of display
