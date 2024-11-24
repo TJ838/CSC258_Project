@@ -60,7 +60,7 @@ count_consecutive: .word 1 # the number of consecutive capsules
 global_timer:  .word 0     # Tracks the passage of time (global loop counter)
 gravity_timer: .word 0
 gravity_threshold: .word 240    # Threshold for triggering gravity
-min_gravity:       .word 10	 # Minimum threshold (fastest speed)
+min_gravity:       .word 30	 # Minimum threshold (fastest speed)
 
 is_paused:        .word 0       # 0 = game running, 1 = game paused
 paused_message:   .asciiz "Paused" # Message to display during pause
@@ -1578,6 +1578,71 @@ pause_handler:
     # Wait for 'p' key to resume
     jal check_input          # Handle input
     j game_loop              # Stay in pause handler until resumed
+
+ draw_pause_logo:
+    # Set white color for the logo
+    li $t4, 0xFFFFFF          # $t4 = white
+    # Start drawing the first vertical bar
+    lw $t0, ADDR_DSPL         # Load base address of display
+    addi $a1, $zero, 4 # Set height = 4
+    # Draw a line
+    add $t5, $zero, $zero	# Set index value ($t5) to zero
+    draw_vertical_bar1:
+    beq $t5, $a1, end_draw_vertical_bar1  # If $t5 == width ($a1), jump to end
+    sw $t4, 248($t0)	#	- Draw a pixel at memory location $t0
+    addi $t0, $t0, 128	#	- Increment $t0 by 128
+    addi $t5, $t5, 1	#	- Increment $t5 by 1
+    j draw_vertical_bar1	#	- Jump to start of line drawing loop
+    
+    end_draw_vertical_bar1:
+    
+    lw $t0, ADDR_DSPL         # Load base address of display
+    addi $a1, $zero, 4 # Set height = 4
+    # Draw a line
+    add $t5, $zero, $zero	# Set index value ($t5) to zero
+    draw_vertical_bar2:
+    beq $t5, $a1, end_draw_vertical_bar2  # If $t5 == width ($a1), jump to end
+    sw $t4, 240($t0)	#	- Draw a pixel at memory location $t0
+    addi $t0, $t0, 128	#	- Increment $t0 by 128
+    addi $t5, $t5, 1	#	- Increment $t5 by 1
+    j draw_vertical_bar2	#- Jump to start of line drawing loop
+    
+    end_draw_vertical_bar2:
+
+end_draw_logo:
+    jr $ra
+clear_pause_logo:
+    # Set white color for the logo
+    li $t4, 0x000000          # $t4 = blaxk
+    # Start drawing the first vertical bar
+    lw $t0, ADDR_DSPL         # Load base address of display
+    addi $a1, $zero, 4 # Set height = 4
+    # Draw a line
+    add $t5, $zero, $zero	# Set index value ($t5) to zero
+    clear_vertical_bar1:
+    beq $t5, $a1, end_clear_vertical_bar1  # If $t5 == width ($a1), jump to end
+    sw $t4, 248($t0)	#	- Draw a pixel at memory location $t0
+    addi $t0, $t0, 128	#	- Increment $t0 by 128
+    addi $t5, $t5, 1	#	- Increment $t5 by 1
+    j clear_vertical_bar1	# - Jump to start of line drawing loop
+    
+    end_clear_vertical_bar1:
+    
+    lw $t0, ADDR_DSPL         # Load base address of display
+    addi $a1, $zero, 4 # Set height = 4
+    # Draw a line
+    add $t5, $zero, $zero	# Set index value ($t5) to zero
+    clear_vertical_bar2:
+    beq $t5, $a1, end_clear_vertical_bar2  # If $t5 == width ($a1), jump to end
+    sw $t4, 240($t0)	#	- Draw a pixel at memory location $t0
+    addi $t0, $t0, 128	#	- Increment $t0 by 128
+    addi $t5, $t5, 1	#	- Increment $t5 by 1
+    j clear_vertical_bar2	#- Jump to start of line drawing loop
+    
+    end_clear_vertical_bar2:
+
+end_clear_logo:
+    jr $ra
     
     
     
