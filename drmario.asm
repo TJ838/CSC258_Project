@@ -44,14 +44,49 @@ virus_color_1:    .word 0xD88373   # RGB value for red
 virus_color_2:   .word 0x73D2DE   # RGB value for blue
 virus_color_3: .word 0xFFD972   # RGB value for yellow
 virus_color_4:    .word 0xD88373   # RGB value for red
+virus_color_5: 	   .word 0xD88373
+virus_color_6:	   .word 0x73D2DE
+virus_color_7: .word 0xFFD972   # RGB value for yellow
+virus_color_8: .word 0xFFD972
+virus_color_9: 	   .word 0xD88373
+virus_color_10:	   .word 0x73D2DE
+virus_color_11: .word 0xFFD972   # RGB value for yellow
+virus_color_12: .word 0x73D2DE
+virus_color_13: 	   .word 0xD88373
+virus_color_14:	   .word 0x73D2DE
+virus_color_15: .word 0xFFD972   # RGB value for yellow
+virus_color_16: 	   .word 0xD88373
+virus_color_17:	   .word 0x73D2DE
+virus_color_18: .word 0xFFD972   # RGB value for yellow
+virus_color_19: 	   .word 0xD88373
+virus_color_20:	   .word 0x73D2DE
+
 virus_position_1: .word 0x000000 #position for virus 1
 virus_position_2: .word 0x000000 #position for virus 2
 virus_position_3: .word 0x000000 #position for virus 3
 virus_position_4: .word 0x000000 #position for virus 4
+virus_position_5: .word 0x000000
+virus_position_6: .word 0x000000
+virus_position_7: .word 0x000000
+virus_position_8: .word 0x000000
+virus_position_9: .word 0x000000
+virus_position_10: .word 0x000000
+virus_position_11: .word 0x000000
+virus_position_12: .word 0x000000
+virus_position_13: .word 0x000000
+virus_position_14: .word 0x000000
+virus_position_15: .word 0x000000
+virus_position_16: .word 0x000000
+virus_position_17: .word 0x000000
+virus_position_18: .word 0x000000
+virus_position_19: .word 0x000000
+virus_position_20: .word 0x000000
 virus_exist_1: .word 1 #existence of virus 1
 virus_exist_2: .word 1 #existence of virus 2
 virus_exist_3: .word 1 #existence of virus 3
 virus_exist_4: .word 1 #existence of virus 4
+
+
 column_start_pos: .word 0 # the starting position of capsules in a column
 column_end_pos: .word 0 # the ending position of capsules in a column
 row_start_pos: .word 0 # the starting position of capsules in a row
@@ -62,11 +97,10 @@ count_consecutive: .word 1 # the number of consecutive capsules
 global_timer:  .word 0     # Tracks the passage of time (global loop counter)
 gravity_timer: .word 0
 gravity_threshold: .word 900    # Threshold for triggering gravity
-min_gravity:       .word 240	 # Minimum threshold (fastest speed)
+min_gravity:       .word 240 # Minimum threshold (fastest speed)
 
-is_paused:        .word 0       # 0 = game running, 1 = game paused
-paused_message:   .asciiz "Paused" # Message to display during pause
-
+is_paused:         .word 0       # 0 = game running, 1 = game paused
+num_viruses: 	   .word 0
 ##############################################################################
 # Mutable Data
 ##############################################################################
@@ -76,11 +110,13 @@ paused_message:   .asciiz "Paused" # Message to display during pause
 ##############################################################################
 	.text
 	.globl main
+    jal difficulty_menu          # Allow player to select difficulty
 
     # Run the game.
 main:
+
     # Initialize the game
-    
+
     # Milestone 1
     li $t4, 0x707070        # $t4 = grey
     lw $t0, ADDR_DSPL
@@ -217,9 +253,8 @@ main:
     add $t0, $t0, $t6       # Increment $t0 to the next row
     addi $t5, $t5, 1        # Increment $t5 by 1
     j draw_vertical_loop4    # Jump to start of vertical drawing loop
-    
-    
-     end_draw_vertical4:
+   
+    end_draw_vertical4:
     # Choose random color for the capsule we would draw at the top
     
     lw $t0, ADDR_DSPL
@@ -369,7 +404,7 @@ li $t2, 1
     sw $t1, capsule_y          # Save current Y position
     sw $t2, capsule_orientation # Save orientation
 
-    # Calculate base address for capsule
+    # Calculate base address fror capsule
     mul $t3, $t1, 32          # Row offset (row * bytes_per_row)
     add $t3, $t3, $t0          # Column offset
     sll $t3, $t3, 2            # Multiply by 4 (bytes_per_pixel)
@@ -527,6 +562,100 @@ jal draw_one_virus_position
 lw $t0, virus_color_4
 sw $a1, virus_position_4
 sw $t0, 0($a1)          # paint virus 4
+
+li $t1, 3
+lw $t2, num_viruses
+beq $t1, $t2, add_4_viruses
+li $t1, 2                 # Hard difficulty
+beq $t1, $t2, add_8_viruses  # If num_viruses == 3, go to add_8_viruses
+j game_loop
+
+add_4_viruses:
+jal draw_one_virus_color
+sw $t0, virus_color_5
+jal draw_one_virus_position
+lw $t0, virus_color_5
+sw $a1, virus_position_5
+sw $t0, 0($a1)
+
+jal draw_one_virus_color
+sw $t0, virus_color_6
+jal draw_one_virus_position
+lw $t0, virus_color_6
+sw $a1, virus_position_6
+sw $t0, 0($a1)
+
+jal draw_one_virus_color
+sw $t0, virus_color_7
+jal draw_one_virus_position
+lw $t0, virus_color_7
+sw $a1, virus_position_7
+sw $t0, 0($a1)
+
+jal draw_one_virus_color
+sw $t0, virus_color_8
+jal draw_one_virus_position
+lw $t0, virus_color_8
+sw $a1, virus_position_8
+sw $t0, 0($a1)
+
+
+add_8_viruses:
+    jal draw_one_virus_color
+    sw $t0, virus_color_13
+    jal draw_one_virus_position
+    lw $t0, virus_color_13
+    sw $a1, virus_position_13
+    sw $t0, 0($a1)
+
+    jal draw_one_virus_color
+    sw $t0, virus_color_14
+    jal draw_one_virus_position
+    lw $t0, virus_color_14
+    sw $a1, virus_position_14
+    sw $t0, 0($a1)
+
+    jal draw_one_virus_color
+    sw $t0, virus_color_15
+    jal draw_one_virus_position
+    lw $t0, virus_color_15
+    sw $a1, virus_position_15
+    sw $t0, 0($a1)
+
+    jal draw_one_virus_color
+    sw $t0, virus_color_16
+    jal draw_one_virus_position
+    lw $t0, virus_color_16
+    sw $a1, virus_position_16
+    sw $t0, 0($a1)
+
+    jal draw_one_virus_color
+    sw $t0, virus_color_17
+    jal draw_one_virus_position
+    lw $t0, virus_color_17
+    sw $a1, virus_position_17
+    sw $t0, 0($a1)
+
+    jal draw_one_virus_color
+    sw $t0, virus_color_18
+    jal draw_one_virus_position
+    lw $t0, virus_color_18
+    sw $a1, virus_position_18
+    sw $t0, 0($a1)
+
+    jal draw_one_virus_color
+    sw $t0, virus_color_19
+    jal draw_one_virus_position
+    lw $t0, virus_color_19
+    sw $a1, virus_position_19
+    sw $t0, 0($a1)
+
+    jal draw_one_virus_color
+    sw $t0, virus_color_20
+    jal draw_one_virus_position
+    lw $t0, virus_color_20
+    sw $a1, virus_position_20
+    sw $t0, 0($a1)
 
     # restore all the registers that were stored on the stack
 lw $ra, 0($sp)              # restore $ra from the stack
@@ -2643,11 +2772,209 @@ lw $t7, 0($sp)              # restore $ra from the stack
 
 jr $ra
 
+draw_menu:
+    # Draw 1
+    li $t4, 0x00FF00
+    lw $t0, ADDR_DSPL
+    addi $t0, $t0, 448
+    addi $a1, $zero, 6  	# set height = 6
+    add $t5, $zero, $zero	# Set index value ($t5) to zero
+    draw_1_loop:
+    beq $t5, $a1, end_draw_1  # If $t5 == width ($a1), jump to end
+    sw $t4, 0($t0)	#	- Draw a pixel at memory location $t0
+    addi $t0, $t0, 128	#	- Increment $t0 by 4
+    addi $t5, $t5, 1	#	- Increment $t5 by 1
+    j draw_1_loop	#	- Jump to start of line drawing loop
+    
+    end_draw_1:
+    
+    # Draw 2
+    li $t4, 0xFFFF00
+    lw $t0, ADDR_DSPL
+    addi $t0, $t0, 1856
+    addi $a1, $zero, 3  	# set height = 3
+    add $t5, $zero, $zero	# Set index value ($t5) to zero
+    draw_2_loop1:
+    beq $t5, $a1, end_draw_2_1 # If $t5 == width ($a1), jump to end
+    sw $t4, 0($t0)	#	- Draw a pixel at memory location $t0
+    addi $t0, $t0, 128	#	- Increment $t0 by 4
+    addi $t5, $t5, 1	#	- Increment $t5 by 1
+    j draw_2_loop1	#	- Jump to start of line drawing loop
+    
+    end_draw_2_1:
+    
+    lw $t0, ADDR_DSPL
+    addi $t0, $t0, 1848
+    addi $a1, $zero, 3  	# set height = 3
+    add $t5, $zero, $zero	# Set index value ($t5) to zero
+    draw_2_loop2:
+    beq $t5, $a1, end_draw_2_2 # If $t5 == width ($a1), jump to end
+    sw $t4, 0($t0)	#	- Draw a pixel at memory location $t0
+    addi $t0, $t0, 4	#	- Increment $t0 by 4
+    addi $t5, $t5, 1	#	- Increment $t5 by 1
+    j draw_2_loop2	#	- Jump to start of line drawing loop
+    end_draw_2_2:
+    
+    lw $t0, ADDR_DSPL
+    addi $t0, $t0, 2104
+    addi $a1, $zero, 3  	# set height = 3
+    add $t5, $zero, $zero	# Set index value ($t5) to zero
+    draw_2_loop3:
+    beq $t5, $a1, end_draw_2_3 # If $t5 == width ($a1), jump to end
+    sw $t4, 0($t0)	#	- Draw a pixel at memory location $t0
+    addi $t0, $t0, 4	#	- Increment $t0 by 4
+    addi $t5, $t5, 1	#	- Increment $t5 by 1
+    j draw_2_loop3	#	- Jump to start of line drawing loop
+    end_draw_2_3:
+    
+    lw $t0, ADDR_DSPL
+    addi $t0, $t0, 2104
+    addi $a1, $zero, 3  	# set height = 3
+    add $t5, $zero, $zero	# Set index value ($t5) to zero
+    draw_2_loop4:
+    beq $t5, $a1, end_draw_2_4 # If $t5 == width ($a1), jump to end
+    sw $t4, 0($t0)	#	- Draw a pixel at memory location $t0
+    addi $t0, $t0, 128	#	- Increment $t0 by 4
+    addi $t5, $t5, 1	#	- Increment $t5 by 1
+    j draw_2_loop4	#	- Jump to start of line drawing loop
+    end_draw_2_4:
+    
+    lw $t0, ADDR_DSPL
+    addi $t0, $t0, 2360
+    addi $a1, $zero, 3  	# set height = 3
+    add $t5, $zero, $zero	# Set index value ($t5) to zero
+    draw_2_loop5:
+    beq $t5, $a1, end_draw_2_5 # If $t5 == width ($a1), jump to end
+    sw $t4, 0($t0)	#	- Draw a pixel at memory location $t0
+    addi $t0, $t0, 4	#	- Increment $t0 by 4
+    addi $t5, $t5, 1	#	- Increment $t5 by 1
+    j draw_2_loop5	#	- Jump to start of line drawing loop
+    end_draw_2_5:
+    
+    # Draw 3
+    li $t4, 0xFF0000
+    lw $t0, ADDR_DSPL
+    addi $t0, $t0, 3640
+    addi $a1, $zero, 3  	# set height = 3
+    add $t5, $zero, $zero	# Set index value ($t5) to zero
+    draw_3_loop1:
+    beq $t5, $a1, end_draw_3_1 # If $t5 == width ($a1), jump to end
+    sw $t4, 0($t0)	#	- Draw a pixel at memory location $t0
+    addi $t0, $t0, 4	#	- Increment $t0 by 4
+    addi $t5, $t5, 1	#	- Increment $t5 by 1
+    j draw_3_loop1	#	- Jump to start of line drawing loop
+    end_draw_3_1:
+    
+    lw $t0, ADDR_DSPL
+    addi $t0, $t0, 3128
+    addi $a1, $zero, 3  	# set height = 3
+    add $t5, $zero, $zero	# Set index value ($t5) to zero
+    draw_3_loop2:
+    beq $t5, $a1, end_draw_3_2 # If $t5 == width ($a1), jump to end
+    sw $t4, 0($t0)	#	- Draw a pixel at memory location $t0
+    addi $t0, $t0, 4	#	- Increment $t0 by 4
+    addi $t5, $t5, 1	#	- Increment $t5 by 1
+    j draw_3_loop2	#	- Jump to start of line drawing loop
+    end_draw_3_2:
+    
+    lw $t0, ADDR_DSPL
+    addi $t0, $t0, 3136
+    addi $a1, $zero, 5  	# set height = 3
+    add $t5, $zero, $zero	# Set index value ($t5) to zero
+    draw_3_loop3:
+    beq $t5, $a1, end_draw_3_3 # If $t5 == width ($a1), jump to end
+    sw $t4, 0($t0)	#	- Draw a pixel at memory location $t0
+    addi $t0, $t0, 128	#	- Increment $t0 by 4
+    addi $t5, $t5, 1	#	- Increment $t5 by 1
+    j draw_3_loop3	#	- Jump to start of line drawing loop
+    end_draw_3_3:
+    
+    lw $t0, ADDR_DSPL
+    addi $t0, $t0, 3384
+    addi $a1, $zero, 3  	# set height = 3
+    add $t5, $zero, $zero	# Set index value ($t5) to zero
+    draw_3_loop4:
+    beq $t5, $a1, end_draw_3_4 # If $t5 == width ($a1), jump to end
+    sw $t4, 0($t0)	#	- Draw a pixel at memory location $t0
+    addi $t0, $t0, 4	#	- Increment $t0 by 4
+    addi $t5, $t5, 1	#	- Increment $t5 by 1
+    j draw_3_loop4	#	- Jump to start of line drawing loop
+    end_draw_3_4:     
+    jr $ra
+difficulty_menu:
+    # Draw the menu on the screen
+    jal draw_menu
+wait_for_input:
+    lw $t1, ADDR_KBRD       # Load keyboard input (address of keyboard)
+    lw $t8, 0($t1)
+    beq $t8, $zero, no_key_pressed  # If no key is pressed, skip input handling
+    
+    lw $a1, 4($t1)
+    
+    # Check which key has been pressed
+    # Easy (1)
+    li $t2, 0x31            
+    beq $a1, $t2, set_easy
+    
+    # Medium (2)
+    li $t2, 0x32            
+    beq $a1, $t2, set_medium
+
+    # Hard (3)
+    li $t2, 0x33            # ASCII for 'd'
+    beq $a1, $t2, set_hard
+    
+    no_key_pressed:
+    jr $ra                  # Return if no key matched
+    
+
+set_easy:
+    li $t2, 1                  # Number of viruses
+    sw $t2, num_viruses
+    li $t3, 900                # Gravity threshold
+    sw $t3, gravity_threshold
+    j menu_done
+
+set_medium:
+    li $t2, 2                  # Number of viruses
+    sw $t2, num_viruses
+    li $t3, 600                  # Gravity threshold
+    sw $t3, gravity_threshold
+    j menu_done
+    
 
 
+
+set_hard:
+    li $t2, 3                  # Number of viruses
+    sw $t2, num_viruses
+    li $t3, 300                  # Gravity threshold
+    sw $t3, gravity_threshold
+    
+
+    j menu_done
+
+menu_done:
+jal clear_screen
+jal main
+
+
+clear_screen:
+    li $t4, 0x000000
+    lw $t0, ADDR_DSPL
+    addi $t0, $t0, 0
+    addi $a1, $zero, 4096	 	# set height = 
+    add $t5, $zero, $zero	# Set index value ($t5) to zero
+    clear_screen_loop:
+    beq $t5, $a1, end_clear_screen  # If $t5 == width ($a1), jump to end
+    sw $t4, 0($t0)	#	- Draw a pixel at memory location $t0
+    addi $t0, $t0, 4	#	- Increment $t0 by 4
+    addi $t5, $t5, 1	#	- Increment $t5 by 1
+    j clear_screen_loop	#	- Jump to start of line drawing loop
+    end_clear_screen:
 # Frame Delay Subroutine
 frame_delay:
-    li $t0, 100         # Adjust this value for your system
+    li $t0, 100
 frame_delay_loop:
     subi $t0, $t0, 1
     bnez $t0, frame_delay_loop
