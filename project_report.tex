@@ -1,0 +1,110 @@
+\documentclass{article}
+
+%% Page Margins %%
+\usepackage{geometry}
+\geometry{
+    top = 0.75in,
+    bottom = 0.75in,
+    right = 0.75in,
+    left = 0.75in,
+}
+
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{parskip}
+
+\title{Assembly Project: Dr Mario}
+
+% TODO: Enter your name
+\author{Adeeb Nawshad & Taiyi Jin}
+
+\begin{document}
+\maketitle
+
+\section{Instruction and Summary}
+
+\begin{enumerate}
+
+    \item Which milestones were implemented? 
+    % TODO: List the milestone(s) and in the case of 
+    %       Milestones 4 & 5, list what features you 
+    %       implemented, sorted into easy and hard 
+    %       categories.
+    Milestone 1 to 5.
+    We completed easy features 1,2,3,5,6,11 and hard feature 5
+
+    \item How to view the game:
+    % TODO: specify the pixes/unit, width and height of 
+    %       your game, etc.  NOTE: list these details in
+    %       the header of your breakout.asm file too!
+    
+    
+    \begin{enumerate}
+
+    \item
+    Unit width and height in pixels:8
+    \item
+    Display width and height in pixels:256
+    \item
+    The left part is the playing field, the right part displays the next capsule
+
+
+    \end{enumerate}
+
+    
+
+\begin{figure}[ht!]
+    \centering
+    \includegraphics[width=0.3\textwidth]{name.png}
+    \caption{a simple view of the game}
+    \label{Instructions}
+\end{figure}
+
+\item Game Summary:
+% TODO: Tell us a little about your game.
+\begin{itemize}
+\item
+The player selects from the three difficulties, which decides the speed of drop and the number of viruses in the game.
+\item
+The user gets to move the capsule down, left or right, and can rotate the capsule 360 degrees. When a capsule is dropped, a new capsule will be generated at the top, which is shown on the right of the screen.
+\item 
+The viruses are displayed in the play field with a slightly different color. The capsules will get cleared once we have 4 or more capsules in a column/row. When all viruses are cleared, the game ends. The game also ends when the entrance of the play field gets blocked.
+\end{itemize}
+
+    
+\end{enumerate}
+
+\section{Attribution Table}
+% TODO: If you worked in partners, tell us who was 
+%       responsible for which features. Some reweighting 
+%       might be possible in cases where one group member
+%       deserves extra credit for the work they put in.
+
+\begin{center}
+\begin{tabular}{|| c | c ||}
+\hline
+ Adeeb Nawshad, 1009812945 &  Taiyi Jin, 1009075796 \\ 
+ \hline
+ Milestone 1 & Milestone 2\\
+ \hline
+ Easy feature 1 & Milestone 3\\
+ \hline
+ Easy feature 2 & Easy feature 5\\ 
+ \hline
+ Easy feature 3 & Easy feature 11\\ 
+ \hline
+ Easy feature 6 & Hard feature 5\\ 
+ \hline
+\end{tabular}
+\end{center}
+
+% TODO: Fill out the remainder of the document as you see 
+%       fit, including as much detail as you think 
+%       necessary to better understand your code. 
+%       You can add extra sections and subsections to 
+%       help us understand why you deserve marks for 
+%       features that were more challenging than they
+%       might initially seem.
+
+
+\end{document}
